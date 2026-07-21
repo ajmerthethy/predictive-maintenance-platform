@@ -1,1 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: predictive_maintenance_db
 
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: predictive_maintenance
+
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+volumes:
+  postgres_data:
