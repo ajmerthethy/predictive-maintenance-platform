@@ -2,9 +2,9 @@ import joblib
 import os
 import pandas as pd
 
-from app.models.machine import Machine
-from app.models.prediction import Prediction
 from app.models.sensor_reading import SensorReading
+from app.models.prediction import Prediction
+
 
 MODEL_PATH = os.path.join(
     "app",
@@ -30,6 +30,7 @@ def predict_failure_from_reading(db, machine_id: int):
             "error": "No sensor readings found for the specified machine."
         }
 
+
     features = pd.DataFrame(
         [
             {
@@ -40,14 +41,28 @@ def predict_failure_from_reading(db, machine_id: int):
         ]
     )
 
-    prediction = model.predict(features)[0]
+
+    prediction_value = model.predict(features)[0]
+
     probability = model.predict_proba(features)[0][1]
+
+
+    prediction_record = Prediction(
+        machine_id=machine_id,
+        prediction=int(prediction_value),
+        probability=float(probability)
+    )
+
+
+    db.add(prediction_record)
+    db.commit()
+    db.refresh(prediction_record)
+
 
     return {
         "machine_id": machine_id,
-        "temperature": reading.temperature,
-        "vibration": reading.vibration,
-        "pressure": reading.pressure,
-        "prediction": int(prediction),
+        "sensor_reading_id": reading.id,
+        "prediction_id": prediction_record.id,
+        "prediction": int(prediction_value),
         "probability": float(probability)
     }
