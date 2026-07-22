@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 
 from app.db.database import Base
+from sqlalchemy import Boolean
 
 class SensorReading(Base):
     __tablename__ = "sensor_readings"
@@ -31,3 +32,7 @@ class SensorReading(Base):
         "Machine",
         back_populates="sensor_readings"
     )
+
+    failure = Column(Boolean, default=False)
+
+    

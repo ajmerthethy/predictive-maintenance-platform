@@ -23,3 +23,8 @@ class Machine(Base):
         "SensorReading",
         back_populates="machine"
     )
+
+    predictions = relationship(
+    "Prediction",
+    back_populates="machine"
+    )
