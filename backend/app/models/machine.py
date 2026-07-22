@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy.orm import relationship
 
 from app.db.database import Base
+
 
 class Machine(Base):
     __tablename__ = "machines"
@@ -16,3 +18,8 @@ class Machine(Base):
     install_date = Column(Date)
 
     status = Column(String, default="Healthy")
+
+    sensor_readings = relationship(
+        "SensorReading",
+        back_populates="machine"
+    )
