@@ -52,3 +52,14 @@ class Alert(Base):
         "Machine",
         back_populates="alerts"
     )
+
+    status = Column(
+    String,
+    nullable=False,
+    default="OPEN"
+    )
+
+    resolved_at = Column(
+        DateTime,
+        nullable=True
+    )
