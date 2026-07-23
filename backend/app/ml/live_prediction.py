@@ -34,9 +34,11 @@ def predict_failure_from_reading(db, machine_id: int):
     features = pd.DataFrame(
         [
             {
-                "temperature": reading.temperature,
-                "vibration": reading.vibration,
-                "pressure": reading.pressure
+                "Air temperature [K]": reading.air_temperature,
+                "Process temperature [K]": reading.process_temperature,
+                "Rotational speed [rpm]": reading.rotational_speed,
+                "Torque [Nm]": reading.torque,
+                "Tool wear [min]": reading.tool_wear
             }
         ]
     )

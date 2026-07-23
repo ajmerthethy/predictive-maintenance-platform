@@ -17,9 +17,11 @@ from app.models.prediction import Prediction
 from app.ml.explain import get_feature_importance
 
 class PredictionRequest(BaseModel):
-    temperature: float
-    vibration: float
-    pressure: float
+    air_temperature: float
+    process_temperature: float
+    rotational_speed: float
+    torque: float
+    tool_wear: float
 
 @router.post("/")
 def predict(
@@ -29,10 +31,12 @@ def predict(
 ):
 
     result = predict_failure(
-        temperature=request.temperature,
-        vibration=request.vibration,
-        pressure=request.pressure
-    )
+    air_temperature=request.air_temperature,
+    process_temperature=request.process_temperature,
+    rotational_speed=request.rotational_speed,
+    torque=request.torque,
+    tool_wear=request.tool_wear
+)
 
     prediction_record = Prediction(
         machine_id=machine_id,
@@ -63,6 +67,7 @@ def predict(
         "machine_id": machine_id,
         "prediction": result["prediction"],
         "probability": result["probability"],
+        "shap_values": result["shap_values"],
         "created_at": prediction_record.created_at
     }
 
