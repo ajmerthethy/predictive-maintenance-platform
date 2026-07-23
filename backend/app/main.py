@@ -11,6 +11,8 @@ from app.models.machine import Machine
 from app.models.sensor_reading import SensorReading
 from app.models.user import User
 from app.routers.auth import router as auth_router
+from app.models.alert import Alert
+from app.routers import alerts
 
 
 Base.metadata.create_all(bind=engine)
@@ -28,6 +30,7 @@ app.include_router(health.router)
 app.include_router(sensor_readings.router)
 app.include_router(analytics.router)
 app.include_router(prediction.router)
+app.include_router(alerts.router)
 app.include_router(auth_router)
 
 @app.get("/")

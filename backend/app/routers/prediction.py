@@ -2,6 +2,8 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from app.db.database import get_db
+from app.models.alert import Alert
+from app.services.alert_service import generate_alert
 
 router = APIRouter(
     prefix="/prediction",
@@ -20,7 +22,11 @@ class PredictionRequest(BaseModel):
     pressure: float
 
 @router.post("/")
-def predict(request: PredictionRequest):
+def predict(
+    request: PredictionRequest,
+    machine_id: int,
+    db: Session = Depends(get_db)
+):
 
     result = predict_failure(
         temperature=request.temperature,
@@ -28,7 +34,37 @@ def predict(request: PredictionRequest):
         pressure=request.pressure
     )
 
-    return result
+    prediction_record = Prediction(
+        machine_id=machine_id,
+        prediction=result["prediction"],
+        probability=result["probability"]
+    )
+
+    db.add(prediction_record)
+    db.commit()
+    db.refresh(prediction_record)
+
+    alert_data = generate_alert(prediction_record)
+
+    if alert_data:
+
+        alert = Alert(
+            machine_id=machine_id,
+            probability=prediction_record.probability,
+            severity=alert_data["severity"],
+            message=alert_data["message"],
+            recommended_action=alert_data["recommended_action"]
+        )
+
+        db.add(alert)
+        db.commit()
+
+    return {
+        "machine_id": machine_id,
+        "prediction": result["prediction"],
+        "probability": result["probability"],
+        "created_at": prediction_record.created_at
+    }
 
 @router.get("/machines/{machine_id}")
 def predict_latest(machine_id: int, db: Session = Depends(get_db)):

@@ -28,3 +28,8 @@ class Machine(Base):
     "Prediction",
     back_populates="machine"
     )
+
+    alerts = relationship(
+    "Alert",
+    back_populates="machine"
+    )
