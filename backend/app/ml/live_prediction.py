@@ -6,12 +6,11 @@ from app.models.sensor_reading import SensorReading
 from app.models.prediction import Prediction
 
 
-MODEL_PATH = os.path.join(
-    "app",
-    "ml",
-    "saved_models",
-    "failure_model.pkl"
-)
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+
+MODEL_PATH = BASE_DIR / "saved_models" / "failure_model.pkl"
 
 model = joblib.load(MODEL_PATH)
 

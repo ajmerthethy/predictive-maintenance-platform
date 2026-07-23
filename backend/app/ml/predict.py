@@ -4,9 +4,12 @@ import os
 import shap
 
 
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
 MODEL_PATH = os.path.join(
-    "app",
-    "ml",
+    BASE_DIR,
     "saved_models",
     "failure_model.pkl"
 )

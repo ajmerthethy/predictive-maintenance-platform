@@ -1,17 +1,11 @@
-
+from pathlib import Path
 import joblib
-import os
 
-IMPORTANCE_PATH = os.path.join(
-    "app",
-    "ml",
-    "saved_models",
-    "feature_importance.pkl"
-)
+BASE_DIR = Path(__file__).resolve().parent
 
-feature_importance = joblib.load(
-    IMPORTANCE_PATH
-)
+IMPORTANCE_PATH = BASE_DIR / "saved_models" / "feature_importance.pkl"
+
+feature_importance = joblib.load(IMPORTANCE_PATH)
 
 def get_feature_importance():
 
