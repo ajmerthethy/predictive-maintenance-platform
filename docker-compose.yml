@@ -1,4 +1,5 @@
 services:
+
   db:
     image: postgres:16
     container_name: predictive_maintenance_db
@@ -13,5 +14,40 @@ services:
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
+
+  backend:
+    build:
+      context: ./backend
+
+    container_name: predictive_maintenance_backend
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      - db
+
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/predictive_maintenance
+
+
+  dashboard:
+    build:
+      context: ./dashboard
+
+    container_name: predictive_maintenance_dashboard
+
+    ports:
+      - "8501:8501"
+    
+    environment:
+      API_URL: http://backend:8000
+
+    depends_on:
+      - backend
+
+
 volumes:
+
   postgres_data:

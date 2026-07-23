@@ -33,3 +33,10 @@ class Machine(Base):
     "Alert",
     back_populates="machine"
     )
+
+    maintenance_tasks = relationship(
+    "MaintenanceTask",
+    back_populates="machine"
+    )
+
+    

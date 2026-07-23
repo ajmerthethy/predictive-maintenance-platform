@@ -1,4 +1,3 @@
-
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -6,9 +5,9 @@ from datetime import datetime
 from app.db.database import Base
 
 
-class Alert(Base):
+class MaintenanceTask(Base):
 
-    __tablename__ = "alerts"
+    __tablename__ = "maintenance_tasks"
 
     id = Column(
         Integer,
@@ -22,24 +21,30 @@ class Alert(Base):
         nullable=False
     )
 
-    severity = Column(
+    alert_id = Column(
+        Integer,
+        ForeignKey("alerts.id"),
+        nullable=True
+    )
+
+    description = Column(
         String,
         nullable=False
     )
 
-    message = Column(
+    technician = Column(
         String,
-        nullable=False
+        nullable=True
     )
 
-    probability = Column(
+    status = Column(
+        String,
+        default="OPEN"
+    )
+
+    cost = Column(
         Float,
-        nullable=False
-    )
-
-    recommended_action = Column(
-        String,
-        nullable=False
+        nullable=True
     )
 
     created_at = Column(
@@ -47,24 +52,18 @@ class Alert(Base):
         default=datetime.utcnow
     )
 
-
-    machine = relationship(
-        "Machine",
-        back_populates="alerts"
-    )
-
-    status = Column(
-    String,
-    nullable=False,
-    default="OPEN"
-    )
-
-    resolved_at = Column(
+    completed_at = Column(
         DateTime,
         nullable=True
     )
 
-    maintenance_tasks = relationship(
-    "MaintenanceTask",
-    back_populates="alert"
+    machine = relationship(
+        "Machine",
+        back_populates="maintenance_tasks"
     )
+
+    alert = relationship(
+        "Alert",
+        back_populates="maintenance_tasks"
+    )
+

@@ -5,7 +5,12 @@ import plotly.express as px
 
 from maintenance_analysis import generate_insights
 
-API_URL = "http://127.0.0.1:8000"
+import os
+
+API_URL = os.getenv(
+    "API_URL",
+    "http://127.0.0.1:8000"
+)
 
 
 st.set_page_config(
@@ -15,6 +20,7 @@ st.set_page_config(
 
 
 st.title("🏭 Predictive Maintenance Dashboard")
+
 
 
 # -----------------------------
@@ -68,6 +74,129 @@ def get_sensor_readings(machine_id):
 
     return []
 
+def get_alerts():
+
+    response = requests.get(
+        f"{API_URL}/alerts/"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return []
+
+
+def get_maintenance_tasks():
+
+    response = requests.get(
+        f"{API_URL}/maintenance/"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return []
+
+
+def get_risk_ranking():
+
+    response = requests.get(
+        f"{API_URL}/analytics/machines/risk"
+    )
+
+    st.write("Status code:", response.status_code)
+    st.write("Response:", response.text)
+
+    if response.status_code == 200:
+        return response.json()
+
+    return []
+
+def get_analytics_summary():
+
+    response = requests.get(
+        f"{API_URL}/analytics/summary"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_alerts():
+
+    response = requests.get(
+        f"{API_URL}/alerts/"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return []
+
+def get_maintenance_tasks():
+
+    response = requests.get(
+        f"{API_URL}/maintenance/"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return []
+
+# -----------------------------
+# ANALYTICS SUMMARY KPIs
+# -----------------------------
+
+st.header("📈 System Overview")
+
+
+summary = get_analytics_summary()
+
+
+if summary:
+
+    col1, col2, col3, col4 = st.columns(4)
+
+
+    with col1:
+        st.metric(
+            "Total Predictions",
+            summary["total_predictions"]
+        )
+
+
+    with col2:
+        st.metric(
+            "Failures Detected",
+            summary["failures_detected"]
+        )
+
+
+    with col3:
+        probability = (
+            summary["average_failure_probability"]
+            * 100
+        )
+
+        st.metric(
+            "Average Failure Risk",
+            f"{probability:.1f}%"
+        )
+
+
+    with col4:
+        st.metric(
+            "High Risk Events",
+            summary["high_risk_predictions"]
+        )
+
+else:
+
+    st.warning(
+        "Analytics summary unavailable"
+    )
 
 # -----------------------------
 # LOAD MACHINES
@@ -158,7 +287,70 @@ if prediction:
             status
         )
 
+# -----------------------------
+# ACTIVE ALERTS
+# -----------------------------
 
+st.header("🚨 Active Alerts")
+
+
+alerts = get_alerts()
+
+
+if alerts:
+
+    alerts_df = pd.DataFrame(alerts)
+
+    st.dataframe(
+        alerts_df[
+            [
+                "machine_id",
+                "severity",
+                "probability",
+                "message",
+                "recommended_action",
+                "status"
+            ]
+        ],
+        use_container_width=True
+    )
+
+else:
+
+    st.success("No active alerts")
+
+# -----------------------------
+# MAINTENANCE TASKS
+# -----------------------------
+
+st.header("🛠 Maintenance Tasks")
+
+
+tasks = get_maintenance_tasks()
+
+
+if tasks:
+
+    tasks_df = pd.DataFrame(tasks)
+
+
+    st.dataframe(
+        tasks_df[
+            [
+                "machine_id",
+                "description",
+                "technician",
+                "status",
+                "created_at",
+                "completed_at"
+            ]
+        ],
+        use_container_width=True
+    )
+
+else:
+
+    st.info("No maintenance tasks found")
 
 # -----------------------------
 # SENSOR HISTORY
@@ -349,4 +541,126 @@ if explanation:
     st.plotly_chart(
         fig,
         use_container_width=True
+    )
+
+# -----------------------------
+# MACHINE RISK RANKING
+# -----------------------------
+
+st.header("📊 Machine Risk Ranking")
+
+
+risk_data = get_risk_ranking()
+st.write(risk_data)
+
+
+if risk_data:
+
+    risk_df = pd.DataFrame(risk_data)
+
+
+    fig = px.bar(
+        risk_df,
+        x="machine_id",
+        y="failure_probability",
+        color="risk_level",
+        title="Machine Failure Risk"
+    )
+
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
+
+
+else:
+
+    st.info("Risk ranking unavailable")
+
+# -----------------------------
+# ACTIVE ALERTS
+# -----------------------------
+
+st.header("🚨 Active Alerts")
+
+
+alerts = get_alerts()
+
+
+if alerts:
+
+    for alert in alerts:
+
+        if alert["severity"] == "HIGH":
+
+            st.error(
+                f"""
+                🔴 {alert['severity']}
+
+                Machine ID:
+                {alert['machine_id']}
+
+                {alert['message']}
+
+                Recommended Action:
+                {alert['recommended_action']}
+                """
+            )
+
+        else:
+
+            st.warning(
+                f"""
+                🟡 {alert['severity']}
+
+                Machine ID:
+                {alert['machine_id']}
+
+                {alert['message']}
+                """
+            )
+
+else:
+
+    st.success(
+        "No active alerts"
+    )
+
+
+
+# -----------------------------
+# MAINTENANCE TASKS
+# -----------------------------
+
+st.header("🛠 Maintenance Tasks")
+
+
+tasks = get_maintenance_tasks()
+
+
+if tasks:
+
+    tasks_df = pd.DataFrame(tasks)
+
+
+    st.dataframe(
+        tasks_df[
+            [
+                "machine_id",
+                "description",
+                "technician",
+                "status",
+                "created_at",
+                "completed_at"
+            ]
+        ],
+        use_container_width=True
+    )
+
+
+else:
+
+    st.info(
+        "No maintenance tasks available"
     )

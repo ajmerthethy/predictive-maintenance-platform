@@ -13,6 +13,8 @@ from app.models.user import User
 from app.routers.auth import router as auth_router
 from app.models.alert import Alert
 from app.routers import alerts
+from app.models.maintenance import MaintenanceTask
+from app.routers import maintenance
 
 
 Base.metadata.create_all(bind=engine)
@@ -32,6 +34,7 @@ app.include_router(analytics.router)
 app.include_router(prediction.router)
 app.include_router(alerts.router)
 app.include_router(auth_router)
+app.include_router(maintenance.router)
 
 @app.get("/")
 def root():
