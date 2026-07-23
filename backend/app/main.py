@@ -9,6 +9,8 @@ from app.routers import prediction
 from app.db.database import Base, engine
 from app.models.machine import Machine
 from app.models.sensor_reading import SensorReading
+from app.models.user import User
+from app.routers.auth import router as auth_router
 
 
 Base.metadata.create_all(bind=engine)
@@ -26,6 +28,7 @@ app.include_router(health.router)
 app.include_router(sensor_readings.router)
 app.include_router(analytics.router)
 app.include_router(prediction.router)
+app.include_router(auth_router)
 
 @app.get("/")
 def root():
