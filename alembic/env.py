@@ -1,11 +1,11 @@
 from logging.config import fileConfig
 
-import os
 import sys
+import os
 
 sys.path.insert(
     0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
+    os.path.abspath("/app/backend")
 )
 
 from sqlalchemy import engine_from_config
