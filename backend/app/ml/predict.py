@@ -45,18 +45,37 @@ def predict_failure(
 
     probability = model.predict_proba(features)[0][1]
 
+    print("Prediction:", prediction)
+    print("Predict_proba:", model.predict_proba(features))
+    print("Probability:", probability)
+    print("Probability type:", type(probability))
+
 
     shap_values = explainer(features)
+
+    feature_impacts = {
+        feature: float(value)
+        for feature, value in zip(
+            features.columns,
+            shap_values.values[0, :, 1]
+        )
+    }
+
+    top_factors = sorted(
+        feature_impacts.items(),
+        key=lambda x: abs(x[1]),
+        reverse=True
+    )
 
 
     return {
         "prediction": int(prediction),
         "probability": float(probability),
-        "shap_values": {
-            feature: float(value)
-            for feature, value in zip(
-                features.columns,
-                shap_values.values[0, :, 1]
-            )
-        }
+        "top_factors": [
+            {
+                "feature": feature,
+                "impact": impact
+            }
+            for feature, impact in top_factors
+        ]
     }

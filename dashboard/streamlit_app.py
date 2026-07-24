@@ -287,6 +287,26 @@ if prediction:
             status
         )
 
+        st.write(prediction)
+
+        st.subheader("🔍 Top Factors Influencing Prediction")
+
+        if "top_factors" in prediction:
+
+            factors_df = pd.DataFrame(prediction["top_factors"])
+
+            fig = px.bar(
+                factors_df,
+                x="impact",
+                y="feature",
+                orientation="h",
+                title="SHAP Feature Contributions"
+            )
+
+            st.plotly_chart(fig, use_container_width=True)
+
+            st.dataframe(factors_df, use_container_width=True)
+
 # -----------------------------
 # ACTIVE ALERTS
 # -----------------------------
@@ -454,52 +474,55 @@ else:
 
 st.header("🛠 Maintenance Insights")
 
+if readings: 
 
-insights = generate_insights(df)
-
-
-for insight in insights:
+    insights = generate_insights(df)
 
 
-    if insight["severity"] == "High":
-
-        st.error(
-            f"""
-            🔴 {insight['issue']}
-
-            Possible cause:
-            {insight['cause']}
-
-            Recommended action:
-            {insight['action']}
-            """
-        )
+    for insight in insights:
 
 
-    elif insight["severity"] == "Medium":
+        if insight["severity"] == "High":
 
-        st.warning(
-            f"""
-            🟡 {insight['issue']}
+            st.error(
+                f"""
+                🔴 {insight['issue']}
 
-            Possible cause:
-            {insight['cause']}
+                Possible cause:
+                {insight['cause']}
 
-            Recommended action:
-            {insight['action']}
-            """
-        )
+                Recommended action:
+                {insight['action']}
+                """
+            )
 
 
-    else:
+        elif insight["severity"] == "Medium":
 
-        st.success(
-            f"""
-            🟢 {insight['issue']}
+            st.warning(
+                f"""
+                🟡 {insight['issue']}
 
-            {insight['action']}
-            """
-        )
+                Possible cause:
+                {insight['cause']}
+
+                Recommended action:
+                {insight['action']}
+                """
+            )
+
+
+        else:
+
+            st.success(
+                f"""
+                🟢 {insight['issue']}
+
+                {insight['action']}
+                """
+            )
+else:
+    st.warning("No sensor readings available")
 
 # -----------------------------
 # MODEL EXPLANATION

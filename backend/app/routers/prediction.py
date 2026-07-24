@@ -67,7 +67,7 @@ def predict(
         "machine_id": machine_id,
         "prediction": result["prediction"],
         "probability": result["probability"],
-        "shap_values": result["shap_values"],
+        "top_factors": result["top_factors"],
         "created_at": prediction_record.created_at
     }
 

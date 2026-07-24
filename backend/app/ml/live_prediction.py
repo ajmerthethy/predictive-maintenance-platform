@@ -4,6 +4,7 @@ import pandas as pd
 
 from app.models.sensor_reading import SensorReading
 from app.models.prediction import Prediction
+from app.ml.predict import predict_failure
 
 
 from pathlib import Path
@@ -43,9 +44,16 @@ def predict_failure_from_reading(db, machine_id: int):
     )
 
 
-    prediction_value = model.predict(features)[0]
+    result = predict_failure(
+        air_temperature=reading.air_temperature,
+        process_temperature=reading.process_temperature,
+        rotational_speed=reading.rotational_speed,
+        torque=reading.torque,
+        tool_wear=reading.tool_wear
+    )
 
-    probability = model.predict_proba(features)[0][1]
+    prediction_value = result["prediction"]
+    probability = result["probability"]
 
 
     prediction_record = Prediction(
@@ -64,6 +72,7 @@ def predict_failure_from_reading(db, machine_id: int):
         "machine_id": machine_id,
         "sensor_reading_id": reading.id,
         "prediction_id": prediction_record.id,
-        "prediction": int(prediction_value),
-        "probability": float(probability)
+        "prediction": prediction_value,
+        "probability": probability,
+        "top_factors": result["top_factors"]
     }
