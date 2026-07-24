@@ -26,9 +26,11 @@ def create_sensor_reading(
     db_sensor_reading = SensorReading(
         machine_id=reading.machine_id,
         timestamp=reading.timestamp,
-        temperature=reading.temperature,
-        vibration=reading.vibration,
-        pressure=reading.pressure
+        air_temperature=reading.air_temperature,
+        process_temperature=reading.process_temperature,
+        rotational_speed=reading.rotational_speed,
+        torque=reading.torque,
+        tool_wear=reading.tool_wear
     )
 
     db.add(db_sensor_reading)

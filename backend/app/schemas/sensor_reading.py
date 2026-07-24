@@ -1,21 +1,28 @@
 from datetime import datetime
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 class SensorReadingCreate(BaseModel):
     machine_id: int
-    temperature: float
-    vibration: float
-    pressure: float
+    air_temperature: float
+    process_temperature: float
+    rotational_speed: float
+    torque: float
+    tool_wear: float
     timestamp: datetime | None = None
+
 
 class SensorReadingResponse(BaseModel):
     id: int
     machine_id: int
-    temperature: float
-    vibration: float
-    pressure: float
+    air_temperature: float
+    process_temperature: float
+    rotational_speed: float
+    torque: float
+    tool_wear: float
+    failure: bool
     timestamp: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True
+    )
