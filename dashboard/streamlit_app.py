@@ -86,26 +86,12 @@ def get_alerts():
     return []
 
 
-def get_maintenance_tasks():
-
-    response = requests.get(
-        f"{API_URL}/maintenance/"
-    )
-
-    if response.status_code == 200:
-        return response.json()
-
-    return []
-
 
 def get_risk_ranking():
 
     response = requests.get(
         f"{API_URL}/analytics/machines/risk"
     )
-
-    st.write("Status code:", response.status_code)
-    st.write("Response:", response.text)
 
     if response.status_code == 200:
         return response.json()
@@ -123,16 +109,6 @@ def get_analytics_summary():
 
     return None
 
-def get_alerts():
-
-    response = requests.get(
-        f"{API_URL}/alerts/"
-    )
-
-    if response.status_code == 200:
-        return response.json()
-
-    return []
 
 def get_maintenance_tasks():
 
@@ -408,7 +384,7 @@ if readings:
     fig_temp = px.line(
         df,
         x="timestamp",
-        y="temperature",
+        y="air_temperature",
         title="Temperature Over Time"
     )
 
