@@ -209,7 +209,6 @@ selected_machine = st.selectbox(
 machine_id = machine_names[selected_machine]
 
 
-
 # -----------------------------
 # FAILURE PREDICTION
 # -----------------------------
@@ -224,11 +223,20 @@ prediction = get_prediction(
 
 if prediction:
 
-
-    probability = (
-        prediction["probability"]
-        * 100
+    # Handle different API response formats
+    probability = prediction.get(
+        "probability",
+        prediction.get(
+            "failure_probability",
+            prediction.get(
+                "prediction_probability",
+                0
+            )
+        )
     )
+
+
+    probability_percent = probability * 100
 
 
     col1, col2 = st.columns(2)
@@ -238,18 +246,17 @@ if prediction:
 
         st.metric(
             "Failure Risk",
-            f"{probability:.1f}%"
+            f"{probability_percent:.1f}%"
         )
 
 
     with col2:
 
-
-        if probability > 80:
+        if probability_percent > 80:
 
             status = "🔴 Critical"
 
-        elif probability > 50:
+        elif probability_percent > 50:
 
             status = "🟡 Warning"
 
@@ -263,25 +270,62 @@ if prediction:
             status
         )
 
-        st.write(prediction)
 
-        st.subheader("🔍 Top Factors Influencing Prediction")
+    st.subheader("Prediction Details")
 
-        if "top_factors" in prediction:
+    st.json(prediction)
 
-            factors_df = pd.DataFrame(prediction["top_factors"])
 
-            fig = px.bar(
-                factors_df,
-                x="impact",
-                y="feature",
-                orientation="h",
-                title="SHAP Feature Contributions"
-            )
+    st.subheader("🔍 Top Factors Influencing Prediction")
 
-            st.plotly_chart(fig, use_container_width=True)
 
-            st.dataframe(factors_df, use_container_width=True)
+    # Support both old and new naming
+    factors = prediction.get(
+        "top_factors",
+        prediction.get(
+            "feature_importance",
+            []
+        )
+    )
+
+
+    if factors:
+
+        factors_df = pd.DataFrame(factors)
+
+
+        fig = px.bar(
+            factors_df,
+            x="impact",
+            y="feature",
+            orientation="h",
+            title="SHAP Feature Contributions"
+        )
+
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+
+        st.dataframe(
+            factors_df,
+            use_container_width=True
+        )
+
+    else:
+
+        st.info(
+            "No explanation factors returned by model."
+        )
+
+
+else:
+
+    st.error(
+        "Prediction unavailable."
+    )
 
 # -----------------------------
 # ACTIVE ALERTS
