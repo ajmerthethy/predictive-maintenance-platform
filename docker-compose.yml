@@ -40,11 +40,10 @@ services:
       timeout: 10s
       retries: 3
 
-
   dashboard:
     build:
-      context: .
-      dockerfile: dashboard/Dockerfile
+      context: ./dashboard
+      dockerfile: Dockerfile
 
     container_name: predictive_maintenance_dashboard
 
