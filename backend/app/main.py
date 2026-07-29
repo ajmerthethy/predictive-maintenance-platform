@@ -5,7 +5,7 @@ from app.routers import analytics
 from app.routers import health
 from app.routers import sensor_readings
 from app.routers import prediction
-
+from app.routers import downtime
 from app.db.database import Base, engine
 from app.models.machine import Machine
 from app.models.sensor_reading import SensorReading
@@ -15,6 +15,11 @@ from app.models.alert import Alert
 from app.routers import alerts
 from app.models.maintenance import MaintenanceTask
 from app.routers import maintenance
+from app.routers import maintenance_summary
+from app.routers import history
+from app.routers import recommendations
+from app.routers import health_score
+from app.routers import maintenance_roi
 
 
 Base.metadata.create_all(bind=engine)
@@ -35,6 +40,12 @@ app.include_router(prediction.router)
 app.include_router(alerts.router)
 app.include_router(auth_router)
 app.include_router(maintenance.router)
+app.include_router(maintenance_summary.router)
+app.include_router(history.router)
+app.include_router(recommendations.router)
+app.include_router(health_score.router)
+app.include_router(downtime.router)
+app.include_router(maintenance_roi.router)
 
 @app.get("/")
 def root():

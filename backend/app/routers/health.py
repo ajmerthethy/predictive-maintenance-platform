@@ -34,9 +34,11 @@ def get_machine_health(
         raise HTTPException(status_code=404, detail="No sensor readings found for this machine.")
 
     health = calculate_health_status(
-        temperature=reading.temperature,
-        vibration=reading.vibration,
-        pressure=reading.pressure
+        air_temperature=reading.air_temperature,
+        process_temperature=reading.process_temperature,
+        rotational_speed=reading.rotational_speed,
+        torque=reading.torque,
+        tool_wear=reading.tool_wear
     )
 
 
