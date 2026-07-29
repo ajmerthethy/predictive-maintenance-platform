@@ -20,6 +20,9 @@ from app.routers import history
 from app.routers import recommendations
 from app.routers import health_score
 from app.routers import maintenance_roi
+from app.routers import executive
+from app.routers import fleet_risk
+from app.routers import maintenance_intelligence
 
 
 Base.metadata.create_all(bind=engine)
@@ -46,6 +49,9 @@ app.include_router(recommendations.router)
 app.include_router(health_score.router)
 app.include_router(downtime.router)
 app.include_router(maintenance_roi.router)
+app.include_router(executive.router)
+app.include_router(fleet_risk.router)
+app.include_router(maintenance_intelligence.router)
 
 @app.get("/")
 def root():
