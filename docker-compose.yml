@@ -30,6 +30,10 @@ services:
 
     depends_on:
       - db
+    
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
     environment:
       DATABASE_URL: ${DATABASE_URL}

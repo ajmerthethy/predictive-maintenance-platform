@@ -6,6 +6,15 @@ import plotly.graph_objects as go
 
 from maintenance_analysis import generate_insights
 
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer
+)
+
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+
 import os
 
 def generate_recommendation(insights, probability_percent):
@@ -55,6 +64,9 @@ st.set_page_config(
     layout="wide"
 )
 
+if "page" not in st.session_state:
+    st.session_state.page = "fleet"
+
 
 st.title("🏭 Predictive Maintenance Dashboard")
 
@@ -91,6 +103,143 @@ def get_explanation():
         return response.json()
 
     return None
+def generate_maintenance_report(
+    machine_name,
+    health,
+    prediction,
+    tasks
+):
+
+    buffer = BytesIO()
+
+
+    doc = SimpleDocTemplate(
+        buffer
+    )
+
+
+    styles = getSampleStyleSheet()
+
+    story = []
+
+
+    story.append(
+        Paragraph(
+            f"Predictive Maintenance Report - {machine_name}",
+            styles["Title"]
+        )
+    )
+
+
+    story.append(
+        Spacer(1, 12)
+    )
+
+
+    # Health Summary
+
+    story.append(
+        Paragraph(
+            f"""
+            <b>Machine:</b> {machine_name}<br/>
+            <b>Status:</b> {health.get('status','Unknown')}<br/>
+            <b>Risk Score:</b> {prediction.get('probability',0)*100:.1f}%<br/>
+            """,
+            styles["BodyText"]
+        )
+    )
+
+
+    story.append(
+        Spacer(1, 12)
+    )
+
+
+    # AI Diagnosis
+
+    story.append(
+        Paragraph(
+            "AI Diagnostic Factors",
+            styles["Heading2"]
+        )
+    )
+
+
+    for factor in prediction.get(
+        "top_factors",
+        []
+    ):
+
+        story.append(
+            Paragraph(
+                f"""
+                {factor['feature']}
+                Impact:
+                {factor['impact']*100:.1f}%
+                """,
+                styles["BodyText"]
+            )
+        )
+
+
+    story.append(
+        Spacer(1, 12)
+    )
+
+
+    # Maintenance History
+
+    story.append(
+        Paragraph(
+            "Maintenance History",
+            styles["Heading2"]
+        )
+    )
+
+
+    if tasks:
+
+        for task in tasks:
+
+            story.append(
+                Paragraph(
+                    f"""
+                    Work Order:
+                    {task['description']}<br/>
+
+                    Status:
+                    {task['status']}<br/>
+
+                    Technician:
+                    {task.get('technician','Unassigned')}
+                    """,
+                    styles["BodyText"]
+                )
+            )
+
+            story.append(
+                Spacer(1,8)
+            )
+
+    else:
+
+        story.append(
+            Paragraph(
+                "No maintenance history recorded.",
+                styles["BodyText"]
+            )
+        )
+
+
+    doc.build(
+        story
+    )
+
+
+    buffer.seek(0)
+
+
+    return buffer
 
 def get_machines():
 
@@ -108,6 +257,17 @@ def get_prediction(machine_id):
 
     response = requests.get(
         f"{API_URL}/prediction/machines/{machine_id}"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_maintenance_recommendation(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/recommendations/machines/{machine_id}"
     )
 
     if response.status_code == 200:
@@ -174,6 +334,39 @@ def get_maintenance_tasks():
         return response.json()
 
     return []
+
+def get_health_score(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/health-score/machines/{machine_id}"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_downtime_cost(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/downtime/machines/{machine_id}"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_maintenance_roi(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/roi/machines/{machine_id}"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
 
 def calculate_fleet_status(risk_data):
 
@@ -243,6 +436,594 @@ def get_alert_history():
         return response.json()
 
     return []
+
+def format_ai_explanation(prediction):
+
+    if not prediction:
+        return []
+
+
+    factors = prediction.get(
+        "top_factors",
+        []
+    )
+
+
+    explanations = []
+
+
+    for factor in factors:
+
+        feature = factor["feature"]
+        impact = factor["impact"]
+
+
+        explanations.append(
+            {
+                "Feature": feature,
+                "Impact (%)": round(
+                    abs(impact) * 100,
+                    1
+                )
+            }
+        )
+
+
+    return explanations
+
+def get_machine_history(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/history/machines/{machine_id}"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_machine_prediction(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/prediction/machines/{machine_id}"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_machine_health(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/machines/{machine_id}/health"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_machine_trend(machine_id):
+
+    response = requests.get(
+        f"{API_URL}/machines/{machine_id}/trend"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_executive_summary():
+
+    response = requests.get(
+        f"{API_URL}/executive/summary"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_maintenance_intelligence():
+
+    response = requests.get(
+        f"{API_URL}/maintenance-intelligence/summary"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def get_fleet_risk():
+
+    response = requests.get(
+        f"{API_URL}/fleet-risk/summary"
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+def machine_detail(machine_id):
+
+    machine_name = machine_lookup.get(
+        machine_id,
+        "Unknown Machine"
+    )
+
+    health_score = get_health_score(machine_id)
+    downtime = get_downtime_cost(machine_id)
+    roi = get_maintenance_roi(machine_id)
+
+
+    st.header(
+        f"🏭 {machine_name}"
+    )
+
+    st.subheader("🏥 Asset Health")
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+
+        if health_score:
+
+            st.metric(
+                "Health Score",
+                f"{health_score['health_score']}/100"
+            )
+
+    with c2:
+
+        if health_score:
+
+            rating = health_score["rating"]
+
+            if rating == "Excellent":
+                st.success(rating)
+
+            elif rating == "Good":
+                st.success(rating)
+
+            elif rating == "Fair":
+                st.warning(rating)
+
+            elif rating == "Poor":
+                st.error(rating)
+
+            else:
+                st.error("🚨 Critical")
+
+    if health_score:
+
+        fig = go.Figure(
+            go.Indicator(
+                mode="gauge+number",
+                value=health_score["health_score"],
+                title={"text": "Asset Health"},
+                gauge={
+                    "axis": {"range": [0, 100]},
+                    "steps": [
+                        {"range": [0, 25], "color": "red"},
+                        {"range": [25, 50], "color": "orange"},
+                        {"range": [50, 75], "color": "yellow"},
+                        {"range": [75, 100], "color": "green"},
+                    ],
+                },
+            )
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+    st.subheader(
+    "💰 Downtime Cost Impact"
+)
+
+
+    if downtime:
+
+        cost = downtime.get(
+            "estimated_daily_cost",
+            0
+        )
+
+        currency = downtime.get(
+            "currency",
+            "USD"
+        )
+
+
+        st.metric(
+            "Estimated Downtime Exposure",
+            f"${cost:,.0f}/day"
+        )
+
+    else:
+
+        st.info(
+            "Downtime estimate unavailable"
+        )
+
+    # -----------------------------
+    # MAINTENANCE ROI
+    # -----------------------------
+
+    if roi:
+
+        st.subheader(
+            "💰 Maintenance ROI Analysis"
+        )
+
+
+        col1, col2, col3 = st.columns(3)
+
+
+        with col1:
+
+            st.metric(
+                "Preventive Maintenance Cost",
+                f"${roi['maintenance_cost']:,.0f}"
+            )
+
+
+        with col2:
+
+            st.metric(
+                "Potential Downtime Loss",
+                f"${roi['potential_downtime_loss']:,.0f}"
+            )
+
+
+        with col3:
+
+            st.metric(
+                "Estimated Savings",
+                f"${roi['estimated_savings']:,.0f}"
+            )
+
+
+        st.info(
+            f"Recommendation: {roi['recommendation']}"
+        )
+    # -----------------------------
+    # HEALTH SUMMARY
+    # -----------------------------
+
+    health = get_machine_health(
+        machine_id
+    )
+
+
+    prediction = get_prediction(
+        machine_id
+    )
+
+
+    if health and prediction:
+
+
+        risk = prediction["probability"] * 100
+
+        health_score = 100 - risk
+
+
+        c1, c2, c3 = st.columns(3)
+
+
+        with c1:
+
+            st.metric(
+                "Machine Status",
+                health["status"]
+            )
+
+
+        with c2:
+
+            st.metric(
+                "Failure Risk",
+                f"{risk:.1f}%"
+            )
+
+
+        with c3:
+
+            st.metric(
+                "Health Score",
+                f"{health_score:.1f}%"
+            )
+
+
+
+    st.divider()
+
+
+
+    # -----------------------------
+    # AI DIAGNOSIS
+    # -----------------------------
+
+    st.subheader(
+        "🤖 AI Diagnosis"
+    )
+
+
+    if prediction:
+
+
+        factors = prediction.get(
+            "top_factors",
+            []
+        )
+
+
+        if factors:
+
+
+            for factor in factors:
+
+                impact = factor["impact"]
+
+
+                if impact > 0:
+
+                    st.warning(
+                        f"""
+⚠️ **{factor['feature']}**
+
+Risk contribution:
++{impact*100:.1f}%
+"""
+                    )
+
+
+                else:
+
+                    st.success(
+                        f"""
+✅ **{factor['feature']}**
+
+Impact:
+{impact*100:.1f}%
+"""
+                    )
+
+
+        else:
+
+            st.info(
+                "No diagnostic factors available."
+            )
+
+    # -----------------------------
+    # MAINTENANCE RECOMMENDATION
+    # -----------------------------
+
+    st.subheader(
+        "📅 Scheduled Maintenance Recommendation"
+    )
+
+
+    recommendation = get_maintenance_recommendation(
+        machine_id
+    )
+
+
+    if recommendation:
+
+
+        priority = recommendation["priority"]
+
+
+        if priority == "CRITICAL":
+
+            st.error(
+                f"🚨 Priority: {priority}"
+            )
+
+
+        elif priority == "HIGH":
+
+            st.warning(
+                f"⚠️ Priority: {priority}"
+            )
+
+
+        else:
+
+            st.info(
+                f"ℹ️ Priority: {priority}"
+            )
+
+
+        st.write(
+            f"""
+    **Recommended Window**
+
+    {recommendation['recommended_window']}
+
+
+    **Recommended Action**
+
+    {recommendation['recommended_action']}
+
+
+    **Reason**
+
+    """
+        )
+
+
+        for reason in recommendation["reasons"]:
+
+            st.write(
+                f"- {reason}"
+            )
+
+    # -----------------------------
+    # PDF REPORT
+    # -----------------------------
+
+    st.subheader(
+        "📄 Maintenance Report"
+    )
+
+
+    if st.button(
+        "Generate Maintenance Report PDF"
+    ):
+
+        tasks = get_maintenance_tasks()
+
+
+        machine_tasks = [
+
+            task for task in tasks
+
+            if task["machine_id"] == machine_id
+
+        ]
+
+
+        pdf = generate_maintenance_report(
+            machine_name,
+            health,
+            prediction,
+            machine_tasks
+        )
+
+
+        st.download_button(
+            label="⬇ Download Report",
+            data=pdf,
+            file_name=f"{machine_name}_maintenance_report.pdf",
+            mime="application/pdf"
+        )
+
+
+
+        st.divider()
+
+
+
+    # -----------------------------
+    # SENSOR TREND
+    # -----------------------------
+
+    st.subheader(
+        "📈 Sensor Trend"
+    )
+
+
+    readings = get_sensor_readings(
+        machine_id
+    )
+
+
+    if readings:
+
+        df = pd.DataFrame(
+            readings
+        )
+
+
+        df["timestamp"] = pd.to_datetime(
+            df["timestamp"]
+        )
+
+
+        sensor = st.selectbox(
+            "Select Sensor",
+            [
+                "air_temperature",
+                "process_temperature",
+                "rotational_speed",
+                "torque",
+                "tool_wear"
+            ]
+        )
+
+
+        fig = px.line(
+            df,
+            x="timestamp",
+            y=sensor,
+            title=f"{sensor} History"
+        )
+
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
+
+
+    else:
+
+        st.info(
+            "No sensor data available."
+        )
+
+
+
+    st.divider()
+
+
+
+    # -----------------------------
+    # MAINTENANCE HISTORY
+    # -----------------------------
+
+    st.subheader(
+        "🛠 Maintenance History"
+    )
+
+
+    tasks = get_maintenance_tasks()
+
+
+    machine_tasks = [
+
+        task for task in tasks
+
+        if task["machine_id"] == machine_id
+
+    ]
+
+
+    if machine_tasks:
+
+
+        history = pd.DataFrame(
+            machine_tasks
+        )
+
+
+        st.dataframe(
+            history[
+                [
+                    "description",
+                    "status",
+                    "technician",
+                    "created_at"
+                ]
+            ],
+            use_container_width=True
+        )
+
+
+    else:
+
+        st.info(
+            "No maintenance history."
+        )
 
 # -----------------------------
 # FLEET OVERVIEW
@@ -339,6 +1120,82 @@ st.plotly_chart(
     fleet_fig,
     use_container_width=True
 )
+
+# -----------------------------
+# ASSET RISK RANKING
+# -----------------------------
+
+st.subheader(
+    "🏭 Asset Risk Ranking"
+)
+
+
+risk_bar = px.bar(
+    risk_df,
+    x="machine_name",
+    y="failure_probability",
+    color="risk_level",
+    text="failure_probability",
+    title="Failure Risk by Asset"
+)
+
+
+risk_bar.update_layout(
+    xaxis_title="Asset",
+    yaxis_title="Failure Risk (%)"
+)
+
+
+st.plotly_chart(
+    risk_bar,
+    use_container_width=True
+)
+
+# -----------------------------
+# MAINTENANCE INTELLIGENCE
+# -----------------------------
+
+st.divider()
+
+st.header(
+    "🛠 Maintenance Intelligence"
+)
+
+
+maintenance_data = (
+    get_maintenance_intelligence()
+)
+
+
+if maintenance_data:
+
+    actions = maintenance_data[
+        "actions_required"
+    ]
+
+
+    if actions:
+
+        for asset in actions:
+
+            st.warning(
+                f"""
+### 🚨 {asset['machine_name']}
+
+Failure Risk:
+**{asset['risk']}%**
+
+Recommended Action:
+
+{asset['recommendation']}
+"""
+            )
+
+    else:
+
+        st.success(
+            "No immediate maintenance actions required."
+        )
 
 # -----------------------------
 # FLEET STATUS BREAKDOWN
@@ -549,6 +1406,133 @@ if not machines:
 
     st.stop()
 
+def executive_dashboard():
+
+    st.header(
+        "📊 Executive Dashboard"
+    )
+
+    data = get_executive_summary()
+
+    if not data:
+        st.error(
+            "Executive analytics unavailable"
+        )
+        return
+
+
+    # KPI CARDS
+
+    col1, col2, col3, col4 = st.columns(4)
+
+
+    with col1:
+        st.metric(
+            "Fleet Health Score",
+            f"{data['fleet_health_score']}/100"
+        )
+
+
+    with col2:
+        st.metric(
+            "Critical Assets",
+            data["critical_assets"]
+        )
+
+
+    with col3:
+        st.metric(
+            "Open Work Orders",
+            data["open_work_orders"]
+        )
+
+
+    with col4:
+        st.metric(
+            "Active Alerts",
+            data["active_alerts"]
+        )
+
+
+    st.divider()
+
+
+    # FINANCIAL IMPACT
+
+    st.subheader(
+        "💰 Financial Impact"
+    )
+
+
+    c1, c2 = st.columns(2)
+
+
+    with c1:
+
+        st.metric(
+            "Downtime Exposure",
+            f"${data['downtime_exposure']:,.0f}"
+        )
+
+
+    with c2:
+
+        st.metric(
+            "Potential Savings",
+            f"${data['potential_savings']:,.0f}"
+        )
+    st.divider()
+
+    st.subheader(
+        "🚦 Fleet Risk Overview"
+    )
+
+
+    risk_data = get_fleet_risk()
+
+
+    if risk_data:
+
+        distribution = risk_data["distribution"]
+
+
+        col1, col2, col3 = st.columns(3)
+
+
+        with col1:
+            st.metric(
+                "🟢 Healthy Assets",
+                distribution["healthy"]
+            )
+
+
+        with col2:
+            st.metric(
+                "🟡 Warning Assets",
+                distribution["warning"]
+            )
+
+
+        with col3:
+            st.metric(
+                "🔴 Critical Assets",
+                distribution["critical"]
+            )
+
+    st.subheader(
+        "🏭 Asset Risk Ranking"
+    )
+
+
+    assets = pd.DataFrame(
+        risk_data["assets"]
+    )
+
+
+    st.dataframe(
+        assets,
+        use_container_width=True
+    )
 
 
 # -----------------------------
@@ -567,10 +1551,37 @@ selected_machine = st.selectbox(
     machine_names.keys()
 )
 
+if st.button(
+    "🔎 View Machine Details"
+):
+
+    st.session_state.page = "machine_detail"
+
+
 
 machine_id = machine_names[selected_machine]
 
+page = st.sidebar.selectbox(
+    "Navigation",
+    [
+        "Fleet Overview",
+        "Machine Detail",
+        "Executive Dashboard"
+    ]
+)
+
+if page == "Machine Detail":
+
+    machine_detail(
+        machine_id
+    )
+elif page == "Executive Dashboard":
+
+    executive_dashboard()
+
 selected_machine_data = machine_lookup[machine_id]
+
+
 
 # -----------------------------
 # MACHINE DETAIL NAVIGATION
@@ -638,6 +1649,82 @@ with tab3:
 prediction = get_prediction(
     machine_id
 )
+
+st.header("🤖 AI Diagnostic Report")
+
+
+if prediction:
+
+    probability = (
+        prediction["probability"] * 100
+    )
+
+
+    if probability > 80:
+        status = "🔴 High Risk"
+
+    elif probability > 50:
+        status = "🟡 Medium Risk"
+
+    else:
+        status = "🟢 Low Risk"
+
+
+    col1, col2 = st.columns(2)
+
+
+    with col1:
+
+        st.metric(
+            "Failure Probability",
+            f"{probability:.1f}%"
+        )
+
+
+    with col2:
+
+        st.metric(
+            "Prediction Status",
+            status
+        )
+
+
+    st.subheader(
+        "Why is this machine at risk?"
+    )
+
+
+    factors = format_ai_explanation(
+        prediction
+    )
+
+
+    if factors:
+
+        factor_df = pd.DataFrame(
+            factors
+        )
+
+
+        st.dataframe(
+            factor_df,
+            use_container_width=True
+        )
+
+
+        fig = px.bar(
+            factor_df,
+            x="Impact (%)",
+            y="Feature",
+            orientation="h",
+            title="AI Risk Contributors"
+        )
+
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
 
 if prediction:
@@ -833,9 +1920,6 @@ if alerts:
 
         machine_name = machine_lookup.get(
             alert["machine_id"],
-            {}
-        ).get(
-            "name",
             f"Machine {alert['machine_id']}"
         )
 
@@ -1015,12 +2099,86 @@ if tasks:
     tasks_df = pd.DataFrame(tasks)
 
 
+    # -----------------------------
+    # MAINTENANCE KPI CARDS
+    # -----------------------------
+
+    total_tasks = len(tasks_df)
+
+    open_tasks = len(
+        tasks_df[
+            tasks_df["status"] == "OPEN"
+        ]
+    )
+
+    progress_tasks = len(
+        tasks_df[
+            tasks_df["status"] == "IN_PROGRESS"
+        ]
+    )
+
+    completed_tasks = len(
+        tasks_df[
+            tasks_df["status"] == "COMPLETED"
+        ]
+    )
+
+
+    st.subheader(
+        "📊 Operations Overview"
+    )
+
+
+    k1, k2, k3, k4 = st.columns(4)
+
+
+    with k1:
+        st.metric(
+            "Total Work Orders",
+            total_tasks
+        )
+
+
+    with k2:
+        st.metric(
+            "🔵 Open",
+            open_tasks
+        )
+
+
+    with k3:
+        st.metric(
+            "🟡 In Progress",
+            progress_tasks
+        )
+
+
+    with k4:
+        st.metric(
+            "🟢 Completed",
+            completed_tasks
+        )
+
+
+    st.divider()
+
+
+    # -----------------------------
+    # WORK ORDER DETAILS
+    # -----------------------------
+
     for _, task in tasks_df.iterrows():
+
+        machine_name = machine_lookup.get(
+            task["machine_id"],
+            f"Machine {task['machine_id']}"
+        )
+
 
         with st.container():
 
             st.subheader(
-                f"Work Order #{task['id']}"
+                f"Work Order #{task['id']} — {machine_name}"
             )
 
 
@@ -1028,18 +2186,38 @@ if tasks:
 
 
             # -----------------------------
-            # WORK ORDER DETAILS
+            # DETAILS
             # -----------------------------
 
             with col1:
 
                 st.write(
-                    f"**Machine ID:** {task['machine_id']}"
+                    f"**Machine:** 🏭 {machine_name}"
                 )
+
 
                 st.write(
                     f"**Description:** {task['description']}"
                 )
+
+
+                if "URGENT" in task["description"]:
+
+                    st.error(
+                        "🚨 Priority: CRITICAL"
+                    )
+
+                elif "Preventive" in task["description"]:
+
+                    st.warning(
+                        "⚠️ Priority: MEDIUM"
+                    )
+
+                else:
+
+                    st.info(
+                        "ℹ️ Priority: NORMAL"
+                    )
 
 
                 if task.get("alert_id"):
@@ -1101,16 +2279,12 @@ if tasks:
             with col3:
 
 
-                # OPEN → IN_PROGRESS
-
                 if status == "OPEN":
-
 
                     if st.button(
                         "▶ Start Work",
                         key=f"start_{task['id']}"
                     ):
-
 
                         response = requests.patch(
                             f"{API_URL}/maintenance/{task['id']}/start",
@@ -1128,7 +2302,6 @@ if tasks:
 
                             st.rerun()
 
-
                         else:
 
                             st.error(
@@ -1136,17 +2309,12 @@ if tasks:
                             )
 
 
-
-                # IN_PROGRESS → COMPLETED
-
                 elif status == "IN_PROGRESS":
-
 
                     if st.button(
                         "✅ Complete Work",
                         key=f"complete_{task['id']}"
                     ):
-
 
                         response = requests.patch(
                             f"{API_URL}/maintenance/{task['id']}/complete"
@@ -1161,16 +2329,12 @@ if tasks:
 
                             st.rerun()
 
-
                         else:
 
                             st.error(
                                 "Failed to complete task"
                             )
 
-
-
-                # COMPLETED
 
                 else:
 
@@ -1340,6 +2504,95 @@ else:
     st.warning("No sensor readings available")
 
 
+# -----------------------------
+# MACHINE HISTORY
+# -----------------------------
+
+st.header("📜 Machine History")
+
+
+history = get_machine_history(machine_id)
+
+
+if history:
+
+
+    st.subheader(
+        "🛠 Maintenance History"
+    )
+
+
+    maintenance = history["maintenance"]
+
+
+    if maintenance:
+
+        maintenance_df = pd.DataFrame(
+            maintenance
+        )
+
+
+        st.dataframe(
+            maintenance_df,
+            use_container_width=True
+        )
+
+    else:
+
+        st.info(
+            "No maintenance history available"
+        )
+
+
+
+    st.subheader(
+        "🚨 Failure Timeline"
+    )
+
+
+    timeline = []
+
+
+    for alert in history["alerts"]:
+
+        timeline.append(
+            {
+                "date": alert["date"],
+                "event":
+                f"Alert: {alert['message']}",
+                "severity":
+                alert["severity"]
+            }
+        )
+
+
+    for prediction in history["predictions"]:
+
+        timeline.append(
+            {
+                "date": prediction["date"],
+                "event":
+                f"Failure prediction probability: {prediction['probability']*100:.1f}%",
+                "severity":
+                "Prediction"
+            }
+        )
+
+
+    timeline_df = pd.DataFrame(
+        timeline
+    )
+
+
+    timeline_df = timeline_df.sort_values(
+        "date"
+    )
+
+
+    st.dataframe(
+        timeline_df,
+        use_container_width=True
+    )
 
 # -----------------------------
 # MAINTENANCE INSIGHTS
@@ -1556,3 +2809,214 @@ st.metric(
     "Fleet Health Score",
     f"{fleet_health:.1f}/100"
 )
+
+# ==================================
+# MACHINE DETAIL PAGE
+# ==================================
+
+if st.session_state.page == "machine_detail":
+
+
+    st.header(
+        f"🏭 {selected_machine}"
+    )
+
+
+    st.button(
+        "⬅ Back to Fleet",
+        on_click=lambda:
+        st.session_state.update(
+            page="fleet"
+        )
+    )
+
+
+    health = get_machine_health(
+        machine_id
+    )
+
+
+    prediction = get_machine_prediction(
+        machine_id
+    )
+
+
+    if health and prediction:
+
+
+        risk = prediction["probability"] * 100
+
+        health_score = 100 - risk
+
+
+        st.subheader(
+            "Asset Health Profile"
+        )
+
+
+        c1, c2, c3 = st.columns(3)
+
+
+        with c1:
+
+            st.metric(
+                "Failure Risk",
+                f"{risk:.1f}%"
+            )
+
+
+        with c2:
+
+            st.metric(
+                "Health Score",
+                f"{health_score:.1f}%"
+            )
+
+
+        with c3:
+
+            st.metric(
+                "Status",
+                health["status"]
+            )
+
+
+
+        st.divider()
+
+
+        # --------------------------
+        # AI DIAGNOSIS
+        # --------------------------
+
+        st.subheader(
+            "🤖 AI Diagnosis"
+        )
+
+
+        factors = prediction.get(
+            "top_factors",
+            []
+        )
+
+
+        if factors:
+
+            factor_df = pd.DataFrame(
+                factors
+            )
+
+
+            st.dataframe(
+                factor_df,
+                use_container_width=True
+            )
+
+
+
+        # --------------------------
+        # ISSUES
+        # --------------------------
+
+        st.subheader(
+            "⚠️ Detected Issues"
+        )
+
+
+        if health["issues"]:
+
+            for issue in health["issues"]:
+
+                st.warning(issue)
+
+        else:
+
+            st.success(
+                "No abnormal conditions detected"
+            )
+
+
+
+        st.divider()
+
+
+        # --------------------------
+        # SENSOR DATA
+        # --------------------------
+
+        st.subheader(
+            "📈 Sensor History"
+        )
+
+
+        readings = get_sensor_readings(
+            machine_id
+        )
+
+
+        if readings:
+
+            df = pd.DataFrame(
+                readings
+            )
+
+
+            fig = px.line(
+                df,
+                x="timestamp",
+                y="torque",
+                title="Torque Trend"
+            )
+
+
+            st.plotly_chart(
+                fig,
+                use_container_width=True
+            )
+
+
+        st.divider()
+
+
+        # --------------------------
+        # HISTORY
+        # --------------------------
+
+        st.subheader(
+            "📜 Maintenance History"
+        )
+
+
+        history = get_machine_history(
+            machine_id
+        )
+
+
+        if history:
+
+            maintenance_df = pd.DataFrame(
+                history["maintenance"]
+            )
+
+
+            if not maintenance_df.empty:
+
+                st.dataframe(
+                    maintenance_df,
+                    use_container_width=True
+                )
+
+            else:
+
+                st.info(
+                    "No maintenance history"
+                )
+
+
+
+    st.stop()
+
+
+
+
+   
