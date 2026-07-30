@@ -6,7 +6,6 @@ from app.routers import health
 from app.routers import sensor_readings
 from app.routers import prediction
 from app.routers import downtime
-from app.db.database import Base, engine
 from app.routers.auth import router as auth_router
 from app.routers import alerts
 from app.routers import maintenance
@@ -18,9 +17,6 @@ from app.routers import maintenance_roi
 from app.routers import executive
 from app.routers import fleet_risk
 from app.routers import maintenance_intelligence
-
-
-Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI(

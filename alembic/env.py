@@ -1,25 +1,28 @@
 from logging.config import fileConfig
 
 import sys
-import os
+from pathlib import Path
 
-sys.path.insert(
-    0,
-    os.path.abspath("/app/backend")
-)
+# The "app" package lives directly under the working directory inside the
+# Docker image (see backend/Dockerfile: COPY backend/ . -> /app/app), but
+# under backend/ when running from a local checkout or CI. Add whichever
+# one actually exists so `alembic` works in both contexts.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+for _candidate in (_REPO_ROOT, _REPO_ROOT / "backend"):
+    if (_candidate / "app").is_dir():
+        sys.path.insert(0, str(_candidate))
+        break
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-from app.models.machine import Machine
-from app.models.sensor_reading import SensorReading
-
-
 from app.db.database import Base
 from app.core.config import DATABASE_URL
 
-import app.models
+# Imported for side effects: registers every model on Base.metadata so
+# autogenerate can see the full schema.
+import app.models  # noqa: F401
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
