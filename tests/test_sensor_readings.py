@@ -1,15 +1,15 @@
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
+from app.main import app
 
 client = TestClient(app)
 
-def test_create_sensor_reading():
+def test_create_sensor_reading(machine):
 
     response = client.post(
         "/sensor_readings/",
         json={
-            "machine_id": 1,
+            "machine_id": machine.id,
             "air_temperature": 300.5,
             "process_temperature": 310.5,
             "rotational_speed": 1500,
@@ -29,10 +29,10 @@ def test_create_sensor_reading():
     assert data["torque"] == 40
     assert data["tool_wear"] == 100
 
-def test_get_sensor_readings():
+def test_get_sensor_readings(machine):
 
     response = client.get(
-        "/sensor_readings/1"
+        f"/sensor_readings/{machine.id}"
     )
 
     assert response.status_code == 200

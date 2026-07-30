@@ -1,0 +1,35 @@
+# Minimal, high-signal lint configuration for CI.
+#
+# Scope is deliberately narrow: pyflakes (F) catches real bugs (unused
+# imports/variables, undefined names) without demanding a repo-wide style
+# rewrite. Broader style/opinionated rule sets can be layered on later once
+# the codebase has a formatter pass, per the architecture audit's phased
+# roadmap (avoid unrelated churn while stabilizing CI).
+
+# Dashboard is a single 3,000+ line monolith slated for restructuring in
+# Phase 3.1; deferring lint coverage there until after that split so findings
+# map to the new per-page files instead of one unreviewable diff.
+#
+# alembic/versions/** is Alembic-generated migration boilerplate — unused
+# `op`/`sa`/`postgresql` imports there are normal and not worth touching.
+exclude = [
+    "dashboard",
+    "alembic/versions",
+]
+
+# Legacy ML pipeline, incompatible with the current SensorReading schema,
+# plus the two debug scripts that only call into it. Scheduled for deletion
+# in architecture audit Phase 1.1 — excluded here rather than lint-fixed to
+# avoid wasted work on code about to be removed.
+extend-exclude = [
+    "backend/app/ml/train.py",
+    "backend/app/ml/dataset.py",
+    "backend/app/ml/features.py",
+    "backend/app/ml/model.py",
+    "backend/app/analytics/feature_engineering.py",
+    "backend/dataset_check.py",
+    "backend/features_check.py",
+]
+
+[lint]
+select = ["F", "E9"]

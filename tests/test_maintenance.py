@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
+from app.main import app
 
 client = TestClient(app)
 
@@ -16,12 +16,12 @@ def test_get_maintenance_tasks():
 
     assert isinstance(data, list)
 
-def test_create_maintenance_task():
+def test_create_maintenance_task(machine):
 
     response = client.post(
         "/maintenance/",
-        params={
-            "machine_id":1,
+        json={
+            "machine_id": machine.id,
             "description": "Replace worn cutting tool",
             "technician": "John Smith"
         }
@@ -31,15 +31,24 @@ def test_create_maintenance_task():
 
     data = response.json()
 
-    assert data["machine_id"] == 1
+    assert data["machine_id"] == machine.id
     assert data["description"] == "Replace worn cutting tool"
     assert data["technician"] == "John Smith"
     assert data["status"] == "OPEN"
 
-def test_complete_maintenance_task():
+def test_complete_maintenance_task(maintenance_task):
 
     response = client.patch(
-        "/maintenance/1/complete"
+        f"/maintenance/{maintenance_task.id}/complete"
     )
 
-    assert response.status_code in [200, 404]
+    assert response.status_code == 200
+    assert response.json()["status"] == "COMPLETED"
+
+def test_complete_maintenance_task_not_found():
+
+    response = client.patch(
+        "/maintenance/999999/complete"
+    )
+
+    assert response.status_code == 404

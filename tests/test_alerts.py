@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from backend.app.main import app 
+from app.main import app
 
 client = TestClient(app)
 
@@ -16,21 +16,36 @@ def test_get_alerts():
 
     assert isinstance(data, list)
 
-def test_acknowledge_alert():
+def test_acknowledge_alert(alert):
 
     response = client.patch(
-        "/alerts/1/acknowledge"
+        f"/alerts/{alert.id}/acknowledge"
     )
 
-    assert response.status_code in [200, 404]
+    assert response.status_code == 200
+    assert response.json()["status"] == "ACKNOWLEDGED"
 
-def test_resolve_alert():
+def test_acknowledge_alert_not_found():
 
     response = client.patch(
-        "/alerts/1/resolve"
+        "/alerts/999999/acknowledge"
     )
 
-    assert response.status_code in [200, 404]
+    assert response.status_code == 404
 
-        
-    
+def test_resolve_alert(alert):
+
+    response = client.patch(
+        f"/alerts/{alert.id}/resolve"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "RESOLVED"
+
+def test_resolve_alert_not_found():
+
+    response = client.patch(
+        "/alerts/999999/resolve"
+    )
+
+    assert response.status_code == 404

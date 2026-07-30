@@ -1,14 +1,14 @@
 
 from fastapi.testclient import TestClient
 
-from backend.app.main import app
+from app.main import app
 
 client = TestClient(app)
 
-def test_prediction_endpoint():
+def test_prediction_endpoint(machine):
 
     response = client.post(
-        "/prediction/?machine_id=1",
+        f"/prediction/?machine_id={machine.id}",
         json = {
             "air_temperature": 300.0,
             "process_temperature": 310.0,

@@ -7,13 +7,8 @@ from app.routers import sensor_readings
 from app.routers import prediction
 from app.routers import downtime
 from app.db.database import Base, engine
-from app.models.machine import Machine
-from app.models.sensor_reading import SensorReading
-from app.models.user import User
 from app.routers.auth import router as auth_router
-from app.models.alert import Alert
 from app.routers import alerts
-from app.models.maintenance import MaintenanceTask
 from app.routers import maintenance
 from app.routers import maintenance_summary
 from app.routers import history
@@ -65,4 +60,3 @@ def health_check():
     return {
         "status": "healthy"
     }
-
