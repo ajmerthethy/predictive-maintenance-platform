@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+import logging
 
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+from app.core.logging_config import configure_logging
 from app.routers import machines
 from app.routers import analytics
 from app.routers import health
@@ -18,12 +22,28 @@ from app.routers import executive
 from app.routers import fleet_risk
 from app.routers import maintenance_intelligence
 
+configure_logging()
+logger = logging.getLogger(__name__)
+
 
 app = FastAPI(
     title="Predictive Maintenance API",
     description="Backend API for Predictive Maintenance Platform",
     version="0.1.0"
 )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    logger.exception(
+        "Unhandled exception while processing %s %s",
+        request.method,
+        request.url.path,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error"},
+    )
 
 
 app.include_router(machines.router)

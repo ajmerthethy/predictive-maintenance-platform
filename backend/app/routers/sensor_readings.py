@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -9,6 +11,8 @@ from app.schemas.sensor_reading import (
 )
 
 from app.services.prediction_service import run_prediction
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
@@ -45,7 +49,11 @@ def create_sensor_reading(
     )
 
 
-    print("Automatic prediction:", prediction)
+    logger.info(
+        "Automatic prediction for machine_id=%s: %s",
+        db_sensor_reading.machine_id,
+        prediction,
+    )
 
 
     return db_sensor_reading

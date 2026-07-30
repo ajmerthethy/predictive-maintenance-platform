@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -6,6 +8,7 @@ from app.db.database import get_db
 from app.models.alert import Alert
 from app.models.maintenance import MaintenanceTask
 from app.models.prediction import Prediction
+from app.schemas.prediction import PredictionResponse
 
 from app.services.alert_service import generate_alert
 
@@ -14,6 +17,8 @@ from app.ml.live_prediction import predict_failure_from_reading
 from app.ml.explain import get_feature_importance
 
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(
@@ -61,6 +66,13 @@ def predict(
     db.commit()
     db.refresh(prediction_record)
 
+    logger.info(
+        "Prediction created id=%s machine_id=%s probability=%s",
+        prediction_record.id,
+        machine_id,
+        prediction_record.probability,
+    )
+
 
 
     # Generate alert
@@ -88,6 +100,13 @@ def predict(
         db.add(created_alert)
         db.commit()
         db.refresh(created_alert)
+
+        logger.info(
+            "Alert created id=%s machine_id=%s severity=%s",
+            created_alert.id,
+            machine_id,
+            created_alert.severity,
+        )
 
 
 
@@ -135,6 +154,12 @@ def predict(
             db.add(maintenance_task)
             db.commit()
 
+            logger.info(
+                "Maintenance task auto-created machine_id=%s alert_id=%s",
+                machine_id,
+                created_alert.id,
+            )
+
 
 
     return {
@@ -169,7 +194,7 @@ def predict_latest(
 
 
 
-@router.get("/history/{machine_id}")
+@router.get("/history/{machine_id}", response_model=list[PredictionResponse])
 def prediction_history(
     machine_id: int,
     db: Session = Depends(get_db)

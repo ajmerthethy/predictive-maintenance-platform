@@ -1,7 +1,11 @@
+import logging
+
 import joblib
 import pandas as pd
 import os
 import shap
+
+logger = logging.getLogger(__name__)
 
 
 BASE_DIR = os.path.dirname(
@@ -45,11 +49,11 @@ def predict_failure(
 
     probability = model.predict_proba(features)[0][1]
 
-    print("Prediction:", prediction)
-    print("Predict_proba:", model.predict_proba(features))
-    print("Probability:", probability)
-    print("Probability type:", type(probability))
-
+    logger.debug(
+        "Prediction=%s probability=%s",
+        prediction,
+        probability,
+    )
 
     shap_values = explainer(features)
 

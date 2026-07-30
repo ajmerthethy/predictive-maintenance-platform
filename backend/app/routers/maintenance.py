@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from app.db.database import get_db
 from app.models.maintenance import MaintenanceTask
+from app.schemas.maintenance import MaintenanceTaskResponse
 
 
 router = APIRouter(
@@ -32,7 +33,7 @@ class MaintenanceCreate(BaseModel):
 # CREATE WORK ORDER
 # -----------------------------
 
-@router.post("/")
+@router.post("/", response_model=MaintenanceTaskResponse)
 def create_task(
     task_data: MaintenanceCreate,
     db: Session = Depends(get_db)
@@ -60,7 +61,7 @@ def create_task(
 # GET ALL WORK ORDERS
 # -----------------------------
 
-@router.get("/")
+@router.get("/", response_model=list[MaintenanceTaskResponse])
 def get_tasks(
     status: str = None,
     db: Session = Depends(get_db)
@@ -97,7 +98,7 @@ def get_tasks(
 # START WORK ORDER
 # -----------------------------
 
-@router.patch("/{task_id}/start")
+@router.patch("/{task_id}/start", response_model=MaintenanceTaskResponse)
 def start_task(
     task_id: int,
     db: Session = Depends(get_db)
@@ -135,7 +136,7 @@ def start_task(
 # COMPLETE WORK ORDER
 # -----------------------------
 
-@router.patch("/{task_id}/complete")
+@router.patch("/{task_id}/complete", response_model=MaintenanceTaskResponse)
 def complete_task(
     task_id: int,
     db: Session = Depends(get_db)

@@ -2,8 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.models.machine import Machine
-from app.models.prediction import Prediction
+from app.services.risk_service import get_latest_prediction_by_machine
 
 
 router = APIRouter(
@@ -17,8 +16,6 @@ def fleet_risk_summary(
     db: Session = Depends(get_db)
 ):
 
-    machines = db.query(Machine).all()
-
     healthy = 0
     warning = 0
     critical = 0
@@ -26,19 +23,7 @@ def fleet_risk_summary(
     assets = []
 
 
-    for machine in machines:
-
-        prediction = (
-            db.query(Prediction)
-            .filter(
-                Prediction.machine_id == machine.id
-            )
-            .order_by(
-                Prediction.created_at.desc()
-            )
-            .first()
-        )
-
+    for machine, prediction in get_latest_prediction_by_machine(db):
 
         if not prediction:
             continue

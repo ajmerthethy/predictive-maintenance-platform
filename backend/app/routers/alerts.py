@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.alert import Alert
+from app.schemas.alert import AlertResponse
 
 
 router = APIRouter(
@@ -18,7 +19,7 @@ router = APIRouter(
 # GET ACTIVE ALERTS / HISTORY
 # -----------------------------
 
-@router.get("/")
+@router.get("/", response_model=list[AlertResponse])
 def get_alerts(
     status: str = None,
     db: Session = Depends(get_db)
@@ -64,7 +65,7 @@ def get_alerts(
 # ACKNOWLEDGE ALERT
 # -----------------------------
 
-@router.patch("/{alert_id}/acknowledge")
+@router.patch("/{alert_id}/acknowledge", response_model=AlertResponse)
 def acknowledge_alert(
     alert_id: int,
     db: Session = Depends(get_db)
@@ -110,7 +111,7 @@ def acknowledge_alert(
 # RESOLVE ALERT
 # -----------------------------
 
-@router.patch("/{alert_id}/resolve")
+@router.patch("/{alert_id}/resolve", response_model=AlertResponse)
 def resolve_alert(
     alert_id: int,
     db: Session = Depends(get_db)

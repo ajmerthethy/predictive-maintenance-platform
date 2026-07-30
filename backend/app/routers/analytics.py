@@ -2,11 +2,10 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from sqlalchemy import desc
 
 from app.db.database import get_db
 from app.models.prediction import Prediction
-from app.models.machine import Machine
+from app.services.risk_service import get_latest_prediction_by_machine
 
 router = APIRouter(
     prefix="/analytics",
@@ -55,25 +54,9 @@ def machine_risk_ranking(
     db: Session = Depends(get_db)
 ):
 
-    machines = (
-        db.query(Machine)
-        .all()
-    )
-
     results = []
 
-    for machine in machines:
-
-        latest_prediction = (
-            db.query(Prediction)
-            .filter(
-                Prediction.machine_id == machine.id
-            )
-            .order_by(
-                desc(Prediction.created_at)
-            )
-            .first()
-        )
+    for machine, latest_prediction in get_latest_prediction_by_machine(db):
 
         if latest_prediction:
 

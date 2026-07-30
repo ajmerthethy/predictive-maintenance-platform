@@ -1,10 +1,8 @@
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.db.database import get_db
-from app.models.machine import Machine
 from app.models.prediction import Prediction
-from app.models.alert import Alert
 
 
 router = APIRouter(
@@ -22,6 +20,7 @@ def maintenance_intelligence(
 
     predictions = (
         db.query(Prediction)
+        .options(joinedload(Prediction.machine))
         .order_by(
             Prediction.probability.desc()
         )
@@ -32,13 +31,7 @@ def maintenance_intelligence(
 
     for prediction in predictions:
 
-        machine = (
-            db.query(Machine)
-            .filter(
-                Machine.id == prediction.machine_id
-            )
-            .first()
-        )
+        machine = prediction.machine
 
         if prediction.probability >= 0.5:
 
