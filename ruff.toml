@@ -6,15 +6,13 @@
 # the codebase has a formatter pass, per the architecture audit's phased
 # roadmap (avoid unrelated churn while stabilizing CI).
 
-# Dashboard is a single 3,000+ line monolith slated for restructuring in
-# Phase 3.1; deferring lint coverage there until after that split so findings
-# map to the new per-page files instead of one unreviewable diff.
-#
 # alembic/versions/** is Alembic-generated migration boilerplate — unused
 # `op`/`sa`/`postgresql` imports there are normal and not worth touching.
+#
+# dashboard/.venv is a local virtualenv, not project code.
 exclude = [
-    "dashboard",
     "alembic/versions",
+    "dashboard/.venv",
 ]
 
 [lint]
