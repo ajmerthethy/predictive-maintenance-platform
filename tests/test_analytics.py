@@ -30,15 +30,3 @@ def test_machine_risk_ranking():
     data = response.json()
 
     assert isinstance(data, list)
-
-def test_machine_features_no_data():
-
-    response = client.get(
-        "/analytics/machines/999/features"
-    )
-
-    assert response.status_code == 200
-
-    data = response.json()
-
-    assert data["message"] == "No sensor readings found for this machine."

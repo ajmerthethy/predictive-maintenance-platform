@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.models.machine import Machine
 from app.models.maintenance import MaintenanceTask
 from app.models.alert import Alert
 from app.models.prediction import Prediction

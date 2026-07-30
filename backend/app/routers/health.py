@@ -4,8 +4,6 @@ from sqlalchemy.orm import Session
 
 from app.db.database import get_db
 from app.models.sensor_reading import SensorReading
-from app.services.health_monitor import calculate_health_status
-
 from app.services.health_monitor import (
     calculate_health_status,
     analyze_sensor_trend

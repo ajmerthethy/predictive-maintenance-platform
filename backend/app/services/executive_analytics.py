@@ -1,8 +1,3 @@
-from app.models.prediction import Prediction
-from app.models.maintenance import MaintenanceTask
-from app.models.machine import Machine
-
-
 def calculate_maintenance_compliance(
     completed: int,
     total: int

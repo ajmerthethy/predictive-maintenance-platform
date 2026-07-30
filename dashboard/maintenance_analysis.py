@@ -1,6 +1,3 @@
-import pandas as pd
-
-
 def generate_insights(df):
 
     insights = []

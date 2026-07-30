@@ -1,6 +1,4 @@
 import joblib
-import os
-import pandas as pd
 
 from app.models.sensor_reading import SensorReading
 from app.models.prediction import Prediction
@@ -29,19 +27,6 @@ def predict_failure_from_reading(db, machine_id: int):
         return {
             "error": "No sensor readings found for the specified machine."
         }
-
-
-    features = pd.DataFrame(
-        [
-            {
-                "Air temperature [K]": reading.air_temperature,
-                "Process temperature [K]": reading.process_temperature,
-                "Rotational speed [rpm]": reading.rotational_speed,
-                "Torque [Nm]": reading.torque,
-                "Tool wear [min]": reading.tool_wear
-            }
-        ]
-    )
 
 
     result = predict_failure(
