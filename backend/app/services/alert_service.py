@@ -1,7 +1,9 @@
+from app.services.risk_service import calculate_risk_level
+
 
 def generate_alert(prediction):
 
-    if prediction.probability >= 0.75:
+    if calculate_risk_level(prediction.probability) == "CRITICAL":
 
         return {
             "severity": "HIGH",

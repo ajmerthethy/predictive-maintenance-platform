@@ -7,6 +7,7 @@ from app.models.machine import Machine
 from app.models.prediction import Prediction
 from app.services.downtime_cost import calculate_downtime_cost
 from app.services.health_score import calculate_asset_health_score
+from app.services.risk_service import calculate_risk_level
 
 
 router = APIRouter(
@@ -63,15 +64,7 @@ def downtime_cost(
     )
 
 
-    # Determine status
-    if failure_probability >= 0.8:
-        status = "Critical"
-
-    elif failure_probability >= 0.5:
-        status = "Warning"
-
-    else:
-        status = "Healthy"
+    status = calculate_risk_level(failure_probability)
 
 
 

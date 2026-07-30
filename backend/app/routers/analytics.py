@@ -5,7 +5,10 @@ from sqlalchemy import func
 
 from app.db.database import get_db
 from app.models.prediction import Prediction
-from app.services.risk_service import get_latest_prediction_by_machine
+from app.services.risk_service import (
+    get_latest_prediction_by_machine,
+    calculate_risk_level,
+)
 
 router = APIRouter(
     prefix="/analytics",
@@ -61,16 +64,7 @@ def machine_risk_ranking(
         if latest_prediction:
 
             probability = latest_prediction.probability
-
-            if probability >= 0.75:
-                risk_level = "CRITICAL"
-
-            elif probability >= 0.50:
-                risk_level = "WARNING"
-
-            else:
-                risk_level = "LOW"
-
+            risk_level = calculate_risk_level(probability)
 
             results.append(
                 {

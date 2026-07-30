@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.db.database import get_db
 from app.models.prediction import Prediction
+from app.services.risk_service import calculate_risk_level
 
 
 router = APIRouter(
@@ -33,7 +34,9 @@ def maintenance_intelligence(
 
         machine = prediction.machine
 
-        if prediction.probability >= 0.5:
+        risk_level = calculate_risk_level(prediction.probability)
+
+        if risk_level in ("CRITICAL", "WARNING"):
 
             risk = round(
                 prediction.probability * 100,
@@ -51,7 +54,7 @@ def maintenance_intelligence(
                     "risk": risk,
                     "recommendation":
                         "Immediate inspection required"
-                        if prediction.probability >= 0.8
+                        if risk_level == "CRITICAL"
                         else
                         "Schedule preventive maintenance"
                 }

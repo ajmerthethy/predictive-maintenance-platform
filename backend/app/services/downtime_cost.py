@@ -6,10 +6,10 @@ def calculate_downtime_cost(
     # Example industrial assumptions
     base_daily_cost = 5000
 
-    if machine_status == "Critical":
+    if machine_status == "CRITICAL":
         multiplier = 2.5
 
-    elif machine_status == "Warning":
+    elif machine_status == "WARNING":
         multiplier = 1.5
 
     else:

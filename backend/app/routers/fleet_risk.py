@@ -2,7 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.services.risk_service import get_latest_prediction_by_machine
+from app.services.risk_service import (
+    get_latest_prediction_by_machine,
+    calculate_risk_level,
+)
 
 
 router = APIRouter(
@@ -30,23 +33,15 @@ def fleet_risk_summary(
 
 
         risk = prediction.probability * 100
+        status = calculate_risk_level(prediction.probability)
 
-
-        if risk >= 75:
-
-            status = "Critical"
+        if status == "CRITICAL":
             critical += 1
 
-
-        elif risk >= 50:
-
-            status = "Warning"
+        elif status == "WARNING":
             warning += 1
 
-
         else:
-
-            status = "Healthy"
             healthy += 1
 
 

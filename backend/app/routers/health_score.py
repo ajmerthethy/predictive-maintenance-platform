@@ -7,8 +7,8 @@ from app.models.prediction import Prediction
 from app.models.alert import Alert
 from app.models.maintenance import MaintenanceTask
 
-from app.services.health_monitor import calculate_health_status
 from app.services.health_score import calculate_asset_health_score
+from app.services.risk_service import calculate_risk_level
 
 router = APIRouter(
     prefix="/health-score",
@@ -48,13 +48,7 @@ def get_health_score(
             detail="Sensor reading not found."
         )
 
-    health_status = "Healthy"
-
-    if prediction.probability >= 0.80:
-        health_status = "Critical"
-
-    elif prediction.probability >= 0.50:
-        health_status = "Warning"
+    health_status = calculate_risk_level(prediction.probability)
 
     active_alerts = (
         db.query(Alert)

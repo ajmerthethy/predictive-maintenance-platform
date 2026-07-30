@@ -11,6 +11,7 @@ from app.models.prediction import Prediction
 from app.schemas.prediction import PredictionResponse
 
 from app.services.alert_service import generate_alert
+from app.services.risk_service import calculate_risk_level
 
 from app.ml.predict import predict_failure
 from app.ml.live_prediction import predict_failure_from_reading
@@ -115,9 +116,9 @@ def predict(
         # -----------------------------
 
         probability = prediction_record.probability
+        risk_level = calculate_risk_level(probability)
 
-
-        if probability > 0.8:
+        if risk_level == "CRITICAL":
 
             description = (
                 "URGENT: Immediate inspection required. "
@@ -125,7 +126,7 @@ def predict(
             )
 
 
-        elif probability > 0.5:
+        elif risk_level == "WARNING":
 
             description = (
                 "Preventive maintenance required. "

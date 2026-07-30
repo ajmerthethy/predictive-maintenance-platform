@@ -18,10 +18,10 @@ def calculate_asset_health_score(
 
     # Operational penalties
     # Operational penalties
-    if health_status == "Critical":
+    if health_status == "CRITICAL":
         score -= 10
 
-    elif health_status == "Warning":
+    elif health_status == "WARNING":
         score -= 5
 
     score -= active_alerts * 2

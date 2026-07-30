@@ -1,10 +1,10 @@
 def generate_recommendation(insights, probability_percent):
 
-    if probability_percent > 80:
+    if probability_percent >= 75:
         priority = "🔴 HIGH"
         timeframe = "Immediate inspection required"
 
-    elif probability_percent > 50:
+    elif probability_percent >= 50:
         priority = "🟡 MEDIUM"
         timeframe = "Inspect within 7 days"
 
@@ -36,6 +36,10 @@ def generate_recommendation(insights, probability_percent):
 
 
 def calculate_fleet_status(risk_data):
+    """Counts machines by the risk_level the backend already computed
+    (single source of truth: app.services.risk_service.calculate_risk_level),
+    rather than re-deriving thresholds from the raw probability here.
+    """
 
     critical = 0
     warning = 0
@@ -44,13 +48,12 @@ def calculate_fleet_status(risk_data):
 
     for machine in risk_data:
 
-        risk = machine["failure_probability"] * 100
+        risk_level = machine["risk_level"]
 
-
-        if risk > 80:
+        if risk_level == "CRITICAL":
             critical += 1
 
-        elif risk > 50:
+        elif risk_level == "WARNING":
             warning += 1
 
         else:
@@ -62,17 +65,6 @@ def calculate_fleet_status(risk_data):
         "warning": warning,
         "healthy": healthy
     }
-
-def get_risk_level(probability):
-
-    if probability > 80:
-        return "🔴 CRITICAL"
-
-    elif probability > 50:
-        return "🟡 WARNING"
-
-    else:
-        return "🟢 HEALTHY"
 
 def format_ai_explanation(prediction):
 

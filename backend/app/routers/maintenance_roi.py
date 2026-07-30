@@ -19,6 +19,8 @@ from app.services.maintenance_roi import (
     calculate_maintenance_roi
 )
 
+from app.services.risk_service import calculate_risk_level
+
 
 router = APIRouter(
     prefix="/roi",
@@ -68,14 +70,7 @@ def maintenance_roi(
         .count()
     )
 
-    if prediction.probability > 0.80:
-        health_status = "Critical"
-
-    elif prediction.probability > 0.50:
-        health_status = "Warning"
-
-    else:
-        health_status = "Healthy"
+    health_status = calculate_risk_level(prediction.probability)
 
     health = calculate_asset_health_score(
         failure_probability=prediction.probability,
@@ -85,7 +80,7 @@ def maintenance_roi(
     )
 
     downtime = calculate_downtime_cost(
-        health["rating"],
+        health_status,
         health["health_score"]
     )
 

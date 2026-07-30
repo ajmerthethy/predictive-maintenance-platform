@@ -92,7 +92,7 @@ Failure Risk: **{highest['failure_probability']:.1f}%**
 Current Status: **{highest['risk_level']}**
 
 Recommended Action:
-{"Immediate inspection required" if highest["failure_probability"] > 80 else "Inspect within 7 days"}
+{"Immediate inspection required" if highest["risk_level"] == "CRITICAL" else "Inspect within 7 days"}
 """
     )
 
@@ -126,19 +126,19 @@ Recommended Action:
     ).round(1)
 
     # Generate recommendations
-    def get_risk_action(risk):
+    def get_risk_action(risk_level):
 
-        if risk > 80:
+        if risk_level == "CRITICAL":
             return "🔴 Immediate inspection required"
 
-        elif risk > 50:
+        elif risk_level == "WARNING":
             return "🟡 Inspect within 7 days"
 
         else:
             return "🟢 Continue monitoring"
 
     risk_df["recommended_action"] = (
-        risk_df["failure_probability"]
+        risk_df["risk_level"]
         .apply(get_risk_action)
     )
 
@@ -285,11 +285,11 @@ if risk_data:
         }
 
 
-        if risk > 80:
+        if machine["risk_level"] == "CRITICAL":
 
             critical_machines.append(machine_info)
 
-        elif risk > 50:
+        elif machine["risk_level"] == "WARNING":
 
             warning_machines.append(machine_info)
 

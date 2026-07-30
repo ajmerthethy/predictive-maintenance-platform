@@ -290,13 +290,18 @@ if prediction:
     probability_percent = probability * 100
     health_score_from_prob = 100 - probability_percent
 
-    if probability_percent > 80:
+    # Aligned with the backend's canonical risk_level thresholds
+    # (app.services.risk_service.calculate_risk_level: >=75 / >=50).
+    if probability_percent >= 75:
+        risk_level = "CRITICAL"
         status = "🔴 High Risk"
 
-    elif probability_percent > 50:
+    elif probability_percent >= 50:
+        risk_level = "WARNING"
         status = "🟡 Medium Risk"
 
     else:
+        risk_level = "LOW"
         status = "🟢 Low Risk"
 
     col1, col2, col3, col4 = st.columns(4)
@@ -326,7 +331,7 @@ if prediction:
 
         st.metric(
             "Prediction",
-            "Failure Detected" if probability > 0.5 else "Normal"
+            "Failure Detected" if prediction.get("prediction") == 1 else "Normal"
         )
 
     if "created_at" in prediction:
@@ -366,7 +371,7 @@ if prediction:
 
     st.subheader("⚙ Current Condition")
 
-    if probability_percent > 80:
+    if risk_level == "CRITICAL":
 
         st.error(
             """
@@ -376,7 +381,7 @@ if prediction:
             """
         )
 
-    elif probability_percent > 50:
+    elif risk_level == "WARNING":
 
         st.warning(
             """

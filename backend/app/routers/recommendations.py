@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.models.machine import Machine
 from app.services.maintenance_recommendation import (
     generate_maintenance_recommendation
 )
@@ -10,10 +9,7 @@ from app.services.maintenance_recommendation import (
 from app.routers.prediction import (
     predict_failure_from_reading
 )
-
-from app.services.health_monitor import (
-    calculate_health_status
-)
+from app.services.risk_service import calculate_risk_level
 
 
 router = APIRouter(
@@ -41,15 +37,7 @@ def get_recommendation(
 
         probability = prediction["probability"]
 
-
-        if probability >= 0.8:
-            health_status = "Critical"
-
-        elif probability >= 0.5:
-            health_status = "Warning"
-
-        else:
-            health_status = "Healthy"
+        health_status = calculate_risk_level(probability)
 
 
 

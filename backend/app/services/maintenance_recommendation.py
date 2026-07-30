@@ -67,7 +67,7 @@ def generate_maintenance_recommendation(
 
     if health_status:
 
-        if health_status != "Healthy":
+        if health_status != "LOW":
 
             reasons.append(
                 f"Machine status: {health_status}"
