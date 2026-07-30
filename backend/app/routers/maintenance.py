@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from datetime import datetime
@@ -64,6 +64,8 @@ def create_task(
 @router.get("/", response_model=list[MaintenanceTaskResponse])
 def get_tasks(
     status: str = None,
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):
 
@@ -86,6 +88,8 @@ def get_tasks(
                 MaintenanceTask.created_at
             )
         )
+        .offset(offset)
+        .limit(limit)
         .all()
     )
 

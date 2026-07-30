@@ -12,6 +12,10 @@ from app.models.maintenance import MaintenanceTask
 from app.services.executive_analytics import (
     calculate_maintenance_compliance
 )
+from app.core.config import (
+    DOWNTIME_EXPOSURE_PER_CRITICAL_MACHINE,
+    POTENTIAL_SAVINGS_PER_CRITICAL_MACHINE,
+)
 
 router = APIRouter(
     prefix="/executive",
@@ -110,7 +114,7 @@ def executive_summary(
 
 
     downtime_exposure = (
-        len(critical_machine_ids) * 11250
+        len(critical_machine_ids) * DOWNTIME_EXPOSURE_PER_CRITICAL_MACHINE
     )
 
     # -----------------------------
@@ -124,7 +128,7 @@ def executive_summary(
         if prediction.prediction == 1:
 
             potential_savings = (
-                len(critical_machine_ids) * 32750
+                len(critical_machine_ids) * POTENTIAL_SAVINGS_PER_CRITICAL_MACHINE
             )
 
     return {

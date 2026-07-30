@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -198,6 +198,8 @@ def predict_latest(
 @router.get("/history/{machine_id}", response_model=list[PredictionResponse])
 def prediction_history(
     machine_id: int,
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):
 
@@ -212,6 +214,10 @@ def prediction_history(
         .order_by(
             Prediction.created_at.asc()
         )
+
+        .offset(offset)
+
+        .limit(limit)
 
         .all()
 

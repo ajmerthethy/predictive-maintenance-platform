@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
@@ -22,6 +22,8 @@ router = APIRouter(
 @router.get("/", response_model=list[AlertResponse])
 def get_alerts(
     status: str = None,
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):
 
@@ -53,6 +55,8 @@ def get_alerts(
         .order_by(
             desc(Alert.created_at)
         )
+        .offset(offset)
+        .limit(limit)
         .all()
     )
 

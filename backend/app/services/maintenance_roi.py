@@ -1,8 +1,11 @@
+from app.core.config import DEFAULT_MAINTENANCE_COST, DEFAULT_DOWNTIME_DAYS
+
+
 def calculate_maintenance_roi(
     downtime_cost_per_day: float,
     health_score: float,
-    maintenance_cost: float = 2500,
-    downtime_days: int = 3,
+    maintenance_cost: float = DEFAULT_MAINTENANCE_COST,
+    downtime_days: int = DEFAULT_DOWNTIME_DAYS,
 ):
 
     """

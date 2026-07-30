@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -27,8 +27,18 @@ def create_machine(machine: MachineCreate, db: Session = Depends(get_db)):
     return db_machine
 
 @router.get("/", response_model=list[MachineResponse])
-def get_machines(db: Session = Depends(get_db)):
+def get_machines(
+    limit: int = Query(200, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
 
-    machines = db.query(Machine).all()
+    machines = (
+        db.query(Machine)
+        .order_by(Machine.id)
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
 
     return machines

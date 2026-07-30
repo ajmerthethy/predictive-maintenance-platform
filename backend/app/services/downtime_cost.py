@@ -1,10 +1,12 @@
+from app.core.config import DOWNTIME_BASE_DAILY_COST
+
+
 def calculate_downtime_cost(
     machine_status,
     health_score
 ):
 
-    # Example industrial assumptions
-    base_daily_cost = 5000
+    base_daily_cost = DOWNTIME_BASE_DAILY_COST
 
     if machine_status == "CRITICAL":
         multiplier = 2.5
