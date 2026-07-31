@@ -3,6 +3,7 @@ import logging
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.core.config import JWT_SECRET_KEY, validate_jwt_secret_key
 from app.core.logging_config import configure_logging
 from app.core.security import get_current_user
 from app.routers import machines
@@ -26,6 +27,8 @@ from app.routers import maintenance_intelligence
 configure_logging()
 logger = logging.getLogger(__name__)
 
+# Fail fast rather than boot with a forgeable auth secret.
+validate_jwt_secret_key(JWT_SECRET_KEY)
 
 app = FastAPI(
     title="Predictive Maintenance API",

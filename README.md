@@ -197,7 +197,11 @@ cd predictive-maintenance-platform
 
 ## 2. Configure environment variables
 
-Create a `.env` file:
+Copy `.env.example` to `.env` and fill it in:
+
+```bash
+cp .env.example .env
+```
 
 ```env
 POSTGRES_USER=postgres
@@ -205,7 +209,17 @@ POSTGRES_PASSWORD=password
 POSTGRES_DB=predictive_maintenance
 
 DATABASE_URL=postgresql://postgres:password@db:5432/predictive_maintenance
+
+JWT_SECRET_KEY=<generate one - see below>
 ```
+
+`JWT_SECRET_KEY` is required - the app refuses to start without it (or if it's shorter than 32 characters). There is no default value, on purpose. Generate one with:
+
+```bash
+python -c "import secrets; print(secrets.token_hex(32))"
+```
+
+See `.env.example` for the full list of supported variables, including optional email-alerting and business-assumption overrides.
 
 ---
 
