@@ -126,20 +126,22 @@ with c2:
 
         rating = health_score["rating"]
 
+        # Matches app.services.health_score.calculate_asset_health_score's
+        # actual five rating tiers (Excellent/Good/Monitor/At Risk/Critical).
         if rating == "Excellent":
             st.success(rating)
 
         elif rating == "Good":
             st.success(rating)
 
-        elif rating == "Fair":
+        elif rating == "Monitor":
             st.warning(rating)
 
-        elif rating == "Poor":
-            st.error(rating)
+        elif rating == "At Risk":
+            st.warning(rating)
 
         else:
-            st.error("🚨 Critical")
+            st.error(f"🚨 {rating}")
 
 if health_score:
 
