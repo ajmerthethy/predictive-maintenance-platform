@@ -183,6 +183,12 @@ predictive-maintenance-platform/
 
 ---
 
+# 🌿 Branching
+
+`main` is the single source of truth for both GitHub issue automation and Railway deployment — branch from `main` for new work and merge back into it directly; don't accumulate work on a long-lived parallel branch. (Earlier history briefly diverged onto a `production-refactor` branch while `main` sat unchanged; that's been reconciled and `main` is once again current.)
+
+---
+
 # ⚙️ Local Installation
 
 ## 1. Clone repository
