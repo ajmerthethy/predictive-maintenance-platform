@@ -1,3 +1,4 @@
+import logging
 import os
 from dotenv import load_dotenv
 
@@ -49,11 +50,42 @@ JWT_EXPIRATION_HOURS = int(
 # there's no separate feature flag, an empty/missing key IS "disabled".
 RESEND_API_KEY = os.getenv("RESEND_API_KEY")
 
-EMAIL_FROM_ADDRESS = os.getenv(
-    "EMAIL_FROM_ADDRESS", "onboarding@resend.dev"
-)
+# Resend's own sandbox/test sender - works with zero setup, but Resend
+# restricts it to only deliver to the Resend account owner's own email,
+# never an arbitrary customer recipient. Real delivery requires verifying
+# a sending domain in the Resend dashboard/DNS (that step happens entirely
+# outside this repo) and then pointing RESEND_FROM_EMAIL at an address on
+# that domain.
+RESEND_SANDBOX_SENDER = "onboarding@resend.dev"
+
+RESEND_FROM_EMAIL = os.getenv("RESEND_FROM_EMAIL", RESEND_SANDBOX_SENDER)
 
 EMAIL_ALERT_RECIPIENT = os.getenv("EMAIL_ALERT_RECIPIENT")
+
+
+def check_resend_sender_configured():
+    """Log loudly - but never raise - if email alerting is enabled
+    (RESEND_API_KEY is set) while RESEND_FROM_EMAIL is still the sandbox
+    default. This is not itself a broken state (it works for a single
+    recipient who happens to be the Resend account owner, which is the
+    current pilot setup), but it silently stops working for any other
+    recipient, so it needs to be visible rather than discovered only when
+    an alert never arrives. Non-fatal: this is a best-effort notification
+    feature, not core app security - see validate_jwt_secret_key() for
+    the pattern used where a missing/weak value *should* stop the app
+    from booting.
+    """
+
+    if RESEND_API_KEY and RESEND_FROM_EMAIL == RESEND_SANDBOX_SENDER:
+        logging.getLogger(__name__).error(
+            "Email alerting is enabled but RESEND_FROM_EMAIL is still "
+            "Resend's sandbox sender (%s). Alerts will only reach the "
+            "Resend account owner's own inbox, not a real customer "
+            "recipient. Verify a sending domain in the Resend dashboard "
+            "(outside this repo), then set RESEND_FROM_EMAIL to an "
+            "address on that domain.",
+            RESEND_SANDBOX_SENDER,
+        )
 
 DASHBOARD_URL = os.getenv(
     "DASHBOARD_URL", "http://localhost:8501"

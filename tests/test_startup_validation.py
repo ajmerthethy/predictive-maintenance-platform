@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import sys
@@ -5,7 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from app.core.config import validate_jwt_secret_key, MIN_JWT_SECRET_LENGTH
+from app.core import config
+from app.core.config import (
+    check_resend_sender_configured,
+    validate_jwt_secret_key,
+    MIN_JWT_SECRET_LENGTH,
+)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 BACKEND_DIR = REPO_ROOT / "backend"
@@ -75,3 +81,39 @@ def test_app_imports_successfully_with_valid_jwt_secret():
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_resend_sender_check_logs_error_when_still_sandbox(monkeypatch, caplog):
+    monkeypatch.setattr(config, "RESEND_API_KEY", "re_fake_key_for_test")
+    monkeypatch.setattr(
+        config, "RESEND_FROM_EMAIL", config.RESEND_SANDBOX_SENDER
+    )
+
+    with caplog.at_level(logging.ERROR):
+        check_resend_sender_configured()
+
+    assert any(
+        "sandbox sender" in record.message for record in caplog.records
+    )
+
+
+def test_resend_sender_check_silent_with_verified_sender(monkeypatch, caplog):
+    monkeypatch.setattr(config, "RESEND_API_KEY", "re_fake_key_for_test")
+    monkeypatch.setattr(config, "RESEND_FROM_EMAIL", "alerts@realcustomer.com")
+
+    with caplog.at_level(logging.ERROR):
+        check_resend_sender_configured()
+
+    assert caplog.records == []
+
+
+def test_resend_sender_check_silent_when_alerting_disabled(monkeypatch, caplog):
+    monkeypatch.setattr(config, "RESEND_API_KEY", None)
+    monkeypatch.setattr(
+        config, "RESEND_FROM_EMAIL", config.RESEND_SANDBOX_SENDER
+    )
+
+    with caplog.at_level(logging.ERROR):
+        check_resend_sender_configured()
+
+    assert caplog.records == []

@@ -4,7 +4,8 @@ import requests
 
 from app.core.config import (
     RESEND_API_KEY,
-    EMAIL_FROM_ADDRESS,
+    RESEND_FROM_EMAIL,
+    RESEND_SANDBOX_SENDER,
     EMAIL_ALERT_RECIPIENT,
     DASHBOARD_URL,
 )
@@ -18,11 +19,23 @@ def send_alert_email(alert, machine):
     """Best-effort notification for a newly-created alert. Never raises -
     an email provider outage must not break the prediction request that
     triggered it (see #7 acceptance criteria). Silently skips if email
-    alerting isn't configured (RESEND_API_KEY/EMAIL_ALERT_RECIPIENT unset).
+    alerting isn't configured (RESEND_API_KEY/EMAIL_ALERT_RECIPIENT unset) -
+    but logs loudly, not silently, if it's configured with a sender that
+    won't actually reach a real customer (see check below).
     """
 
     if not RESEND_API_KEY or not EMAIL_ALERT_RECIPIENT:
         return
+
+    if RESEND_FROM_EMAIL == RESEND_SANDBOX_SENDER:
+        logger.error(
+            "Sending alert_id=%s from Resend's sandbox sender (%s) - "
+            "this only delivers if EMAIL_ALERT_RECIPIENT is the Resend "
+            "account owner's own address. Verify a domain in Resend and "
+            "set RESEND_FROM_EMAIL for real customer delivery.",
+            alert.id,
+            RESEND_SANDBOX_SENDER,
+        )
 
     probability_pct = round(alert.probability * 100, 1)
 
@@ -42,7 +55,7 @@ def send_alert_email(alert, machine):
             RESEND_API_URL,
             headers={"Authorization": f"Bearer {RESEND_API_KEY}"},
             json={
-                "from": EMAIL_FROM_ADDRESS,
+                "from": RESEND_FROM_EMAIL,
                 "to": [EMAIL_ALERT_RECIPIENT],
                 "subject": subject,
                 "html": body,
