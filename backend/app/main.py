@@ -47,13 +47,17 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-# /health and /auth are the only unauthenticated routes - everything
-# else requires a valid login (single-customer pilot auth, see #5).
+# /auth and the root-level GET /health liveness check (defined at the
+# bottom of this file) are the only unauthenticated routes. health.router
+# is a different thing despite the name - it serves real per-machine data
+# (GET /machines/{id}/health, /trend) and requires a login like everything
+# else. It was previously registered without auth by mistake, exempted
+# alongside the liveness check on the assumption they were the same route.
 _auth = [Depends(get_current_user)]
 
-app.include_router(health.router)
 app.include_router(auth_router)
 
+app.include_router(health.router, dependencies=_auth)
 app.include_router(machines.router, dependencies=_auth)
 app.include_router(sensor_readings.router, dependencies=_auth)
 app.include_router(analytics.router, dependencies=_auth)
