@@ -274,3 +274,31 @@ def get_fleet_risk():
         return response.json()
 
     return None
+
+
+def get_bulk_upload_template():
+
+    response = _get(
+        f"{API_URL}/sensor_readings/bulk/template"
+    )
+
+    if response.status_code == 200:
+        return response.content
+
+    return None
+
+
+def upload_bulk_sensor_readings(machine_id, filename, file_bytes):
+
+    response = _post(
+        f"{API_URL}/sensor_readings/bulk",
+        params={"machine_id": machine_id},
+        files={"file": (filename, file_bytes, "text/csv")},
+    )
+
+    try:
+        payload = response.json()
+    except ValueError:
+        payload = None
+
+    return response.status_code, payload

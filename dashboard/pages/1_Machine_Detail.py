@@ -601,7 +601,8 @@ if readings:
     df = pd.DataFrame(readings)
 
     df["timestamp"] = pd.to_datetime(
-        df["timestamp"]
+        df["timestamp"],
+        format="ISO8601"
     )
 
     df = df.sort_values(
