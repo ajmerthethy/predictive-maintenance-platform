@@ -4,7 +4,8 @@ import pandas as pd
 from lib.api_client import get_executive_summary, get_fleet_risk
 
 st.set_page_config(
-    page_title="Predictive Maintenance Dashboard",
+    page_title="Executive Dashboard | Predictive Maintenance",
+    page_icon="🏭",
     layout="wide"
 )
 
@@ -15,8 +16,9 @@ st.header(
 data = get_executive_summary()
 
 if not data:
-    st.error(
-        "Executive analytics unavailable"
+    st.info(
+        "No fleet data yet. Add a machine and some sensor history to "
+        "populate the executive summary."
     )
     st.stop()
 

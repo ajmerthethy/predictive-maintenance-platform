@@ -17,12 +17,14 @@ from lib.api_client import (
     get_machine_health,
     get_maintenance_tasks,
     get_explanation,
+    SHOW_DEBUG_INFO,
 )
 from lib.business_rules import generate_recommendation, format_ai_explanation
 from lib.report import generate_maintenance_report
 
 st.set_page_config(
-    page_title="Predictive Maintenance Dashboard",
+    page_title="Machine Detail | Predictive Maintenance",
+    page_icon="🏭",
     layout="wide"
 )
 
@@ -39,7 +41,10 @@ machine_lookup = {
 
 if not machines:
 
-    st.error("No machines found")
+    st.info(
+        "No machines yet. Ask your account admin to add your first "
+        "machine to get started."
+    )
 
     st.stop()
 
@@ -219,7 +224,8 @@ if downtime:
 else:
 
     st.info(
-        "Downtime estimate unavailable"
+        "No prediction for this machine yet — upload sensor data or "
+        "run a prediction to see downtime cost estimates."
     )
 
 # -----------------------------
@@ -342,8 +348,9 @@ if prediction:
             prediction["created_at"]
         )
 
-    with st.expander("Prediction Details (Developer)"):
-        st.json(prediction)
+    if SHOW_DEBUG_INFO:
+        with st.expander("Prediction Details (Developer)"):
+            st.json(prediction)
 
     # Health Gauge
 
@@ -476,8 +483,9 @@ if prediction:
 
 else:
 
-    st.error(
-        "Prediction unavailable."
+    st.info(
+        "No prediction available yet for this machine — upload some "
+        "sensor readings first."
     )
 
 

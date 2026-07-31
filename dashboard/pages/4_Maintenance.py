@@ -5,7 +5,8 @@ import requests
 from lib.api_client import API_URL, get_machines, get_maintenance_tasks
 
 st.set_page_config(
-    page_title="Predictive Maintenance Dashboard",
+    page_title="Maintenance | Predictive Maintenance",
+    page_icon="🏭",
     layout="wide"
 )
 

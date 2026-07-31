@@ -11,7 +11,8 @@ from lib.api_client import (
 )
 
 st.set_page_config(
-    page_title="Predictive Maintenance Dashboard",
+    page_title="Alerts | Predictive Maintenance",
+    page_icon="🏭",
     layout="wide"
 )
 

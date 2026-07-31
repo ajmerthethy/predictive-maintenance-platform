@@ -7,6 +7,11 @@ API_URL = os.getenv(
     "http://127.0.0.1:8000"
 )
 
+# Off by default. Set SHOW_DEBUG_INFO=1 in a local/dev environment to see
+# raw API payloads in the dashboard - never enable this in the pilot
+# environment, it's not customer-appropriate.
+SHOW_DEBUG_INFO = os.getenv("SHOW_DEBUG_INFO", "0") == "1"
+
 
 def acknowledge_alert(alert_id):
 

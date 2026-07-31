@@ -10,7 +10,8 @@ from lib.api_client import (
 from lib.business_rules import calculate_fleet_status
 
 st.set_page_config(
-    page_title="Predictive Maintenance Dashboard",
+    page_title="Fleet Overview | Predictive Maintenance",
+    page_icon="🏭",
     layout="wide"
 )
 
@@ -208,7 +209,8 @@ Recommended Action:
 else:
 
     st.info(
-        "Fleet data unavailable"
+        "No machines with predictions yet. Add a machine and upload "
+        "some sensor data to see your fleet overview here."
     )
 
 
@@ -394,7 +396,8 @@ Operating normally
 else:
 
     st.info(
-        "Fleet data unavailable"
+        "No machines with predictions yet. Add a machine and upload "
+        "some sensor data to see your fleet overview here."
     )
 
 
@@ -447,6 +450,7 @@ if summary:
 
 else:
 
-    st.warning(
-        "Analytics summary unavailable"
+    st.info(
+        "No prediction data yet. This section fills in once machines "
+        "have sensor readings and at least one prediction has run."
     )
