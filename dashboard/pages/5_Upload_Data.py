@@ -1,14 +1,8 @@
-import io
-
-import pandas as pd
 import streamlit as st
 
-from lib.api_client import (
-    get_machines,
-    get_bulk_upload_template,
-    upload_bulk_sensor_readings,
-)
+from lib.api_client import get_machines, get_bulk_upload_template
 from lib.auth import require_login, logout_button
+from lib.upload_widget import render_csv_upload_widget
 
 st.set_page_config(
     page_title="Upload Data | Predictive Maintenance",
@@ -56,53 +50,8 @@ selected_machine_id = st.selectbox(
     format_func=lambda machine_id: machine_lookup[machine_id],
 )
 
-uploaded_file = st.file_uploader(
-    "Sensor readings CSV",
-    type=["csv"],
+render_csv_upload_widget(
+    selected_machine_id,
+    machine_lookup[selected_machine_id],
+    key_prefix="upload_page",
 )
-
-if uploaded_file is not None:
-
-    file_bytes = uploaded_file.getvalue()
-
-    try:
-        preview_df = pd.read_csv(io.BytesIO(file_bytes))
-        st.write(f"Preview (first 5 of {len(preview_df)} rows):")
-        st.dataframe(preview_df.head())
-
-    except Exception:
-        st.error(
-            "Could not read this file as a CSV - check the format "
-            "and try again."
-        )
-        st.stop()
-
-    if st.button("Upload"):
-
-        status_code, payload = upload_bulk_sensor_readings(
-            selected_machine_id,
-            uploaded_file.name,
-            file_bytes,
-        )
-
-        if status_code == 200:
-
-            st.success(
-                f"Uploaded {payload['rows_inserted']} sensor readings "
-                f"for {machine_lookup[selected_machine_id]}."
-            )
-
-        else:
-
-            detail = payload.get("detail") if payload else None
-
-            if isinstance(detail, dict):
-
-                st.error(detail.get("message", "Upload failed."))
-
-                for row_error in detail.get("errors", []):
-                    st.write(f"- {row_error}")
-
-            else:
-
-                st.error(detail or "Upload failed. Please try again.")

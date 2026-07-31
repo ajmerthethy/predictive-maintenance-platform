@@ -75,6 +75,35 @@ def get_machines():
     return []
 
 
+def create_machine(
+    name,
+    location,
+    manufacturer=None,
+    install_date=None,
+    status="active",
+):
+
+    payload = {
+        "name": name,
+        "location": location,
+        "manufacturer": manufacturer,
+        "status": status,
+    }
+
+    if install_date:
+        payload["install_date"] = install_date.isoformat()
+
+    response = _post(
+        f"{API_URL}/machines/",
+        json=payload,
+    )
+
+    if response.status_code == 200:
+        return response.json()
+
+    return None
+
+
 def get_prediction(machine_id):
 
     response = _get(
