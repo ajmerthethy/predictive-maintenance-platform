@@ -16,11 +16,11 @@ def calculate_risk_level(probability):
     return "LOW"
 
 
-def get_latest_prediction_by_machine(db):
+def get_latest_prediction_by_machine(db, account_id):
     """
     Returns a list of (Machine, Prediction | None) tuples: every machine
-    paired with its single most recent prediction, in one query instead of
-    one query per machine.
+    belonging to `account_id`, paired with its single most recent
+    prediction, in one query instead of one query per machine.
     """
 
     row_number = (
@@ -38,6 +38,7 @@ def get_latest_prediction_by_machine(db):
 
     return (
         db.query(Machine, LatestPrediction)
+        .filter(Machine.account_id == account_id)
         .outerjoin(
             latest_predictions,
             (latest_predictions.c.machine_id == Machine.id)

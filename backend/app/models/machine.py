@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.db.database import Base
@@ -18,6 +18,15 @@ class Machine(Base):
     install_date = Column(Date)
 
     status = Column(String, default="Healthy")
+
+    account_id = Column(
+        Integer,
+        ForeignKey("accounts.id"),
+        nullable=False,
+        index=True
+    )
+
+    account = relationship("Account", back_populates="machines")
 
     sensor_readings = relationship(
         "SensorReading",

@@ -15,6 +15,7 @@ sys.path.append(
 
 from app.db.database import SessionLocal
 
+from app.models.account import Account
 from app.models.machine import Machine
 from app.models.sensor_reading import SensorReading
 from app.models.prediction import Prediction
@@ -22,7 +23,28 @@ from app.models.alert import Alert
 from app.models.maintenance import MaintenanceTask
 
 
+DEFAULT_ACCOUNT_NAME = "Default Account"
+
 db = SessionLocal()
+
+
+def get_or_create_account(account_name):
+
+    account = (
+        db.query(Account)
+        .filter(Account.name == account_name)
+        .first()
+    )
+
+    if account:
+        return account
+
+    account = Account(name=account_name)
+    db.add(account)
+    db.commit()
+    db.refresh(account)
+
+    return account
 
 
 def generate_sensor_data(profile, day):
@@ -132,15 +154,40 @@ def calculate_probability(profile):
 
 
 
-def seed():
+def seed(account_name=DEFAULT_ACCOUNT_NAME):
 
-    print("Clearing existing data...")
+    account = get_or_create_account(account_name)
 
-    db.query(MaintenanceTask).delete()
-    db.query(Alert).delete()
-    db.query(Prediction).delete()
-    db.query(SensorReading).delete()
-    db.query(Machine).delete()
+    print(f"Clearing existing data for account '{account_name}'...")
+
+    # Scoped to this account's machines only - this script must never
+    # touch another customer's data, even accidentally, when re-seeding
+    # one account's demo environment.
+    account_machine_ids = (
+        db.query(Machine.id)
+        .filter(Machine.account_id == account.id)
+        .subquery()
+    )
+
+    db.query(MaintenanceTask).filter(
+        MaintenanceTask.machine_id.in_(account_machine_ids)
+    ).delete(synchronize_session=False)
+
+    db.query(Alert).filter(
+        Alert.machine_id.in_(account_machine_ids)
+    ).delete(synchronize_session=False)
+
+    db.query(Prediction).filter(
+        Prediction.machine_id.in_(account_machine_ids)
+    ).delete(synchronize_session=False)
+
+    db.query(SensorReading).filter(
+        SensorReading.machine_id.in_(account_machine_ids)
+    ).delete(synchronize_session=False)
+
+    db.query(Machine).filter(
+        Machine.account_id == account.id
+    ).delete(synchronize_session=False)
 
     db.commit()
 
@@ -203,7 +250,9 @@ def seed():
 
             install_date=date(2021, 1, 1),
 
-            status="active"
+            status="active",
+
+            account_id=account.id,
 
         )
 
@@ -363,4 +412,6 @@ def seed():
 
 if __name__ == "__main__":
 
-    seed()
+    account_name = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ACCOUNT_NAME
+
+    seed(account_name)

@@ -24,6 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 from app.main import app
 from app.core.security import get_current_user
 from app.db.database import get_db
+from app.models.account import Account
 from app.models.machine import Machine
 from app.models.alert import Alert
 from app.models.maintenance import MaintenanceTask
@@ -68,14 +69,47 @@ def _migrated_test_database():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _bypass_auth():
+def _test_account_id(_migrated_test_database):
+    """A single Account row every test in this session can use, including
+    the bypassed auth user and the `machine` fixture below - they must
+    agree on the same account_id or account-scoped queries (see
+    services/tenancy.py) would filter everything out.
+
+    Created via a short-lived, auto-committing session rather than the
+    per-test SAVEPOINT session (db_session) since this needs to exist
+    before, and outlive, every individual test's rolled-back transaction.
+    Left behind in the disposable test database afterward - harmless.
+    """
+    session = sessionmaker(bind=_engine)()
+    try:
+        account = (
+            session.query(Account)
+            .filter(Account.name == "Test Account")
+            .first()
+        )
+        if not account:
+            account = Account(name="Test Account")
+            session.add(account)
+            session.commit()
+            session.refresh(account)
+        return account.id
+    finally:
+        session.close()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _bypass_auth(_test_account_id):
     """Every router except /health and /auth requires a logged-in user
     (see #5). These tests exercise business logic, not the login flow
     itself (that's covered separately) - so route handlers under test
     should not need a real bearer token, only get_db does.
     """
     app.dependency_overrides[get_current_user] = lambda: User(
-        id=0, username="test-user", email="test@example.com", role="admin"
+        id=0,
+        username="test-user",
+        email="test@example.com",
+        role="admin",
+        account_id=_test_account_id,
     )
     yield
     app.dependency_overrides.pop(get_current_user, None)
@@ -120,15 +154,18 @@ def db_session(_migrated_test_database):
 
 
 @pytest.fixture()
-def machine(db_session):
+def machine(db_session, _test_account_id):
     """A Machine row tests can depend on instead of assuming any particular
-    id (e.g. `machine_id=1`) already exists.
+    id (e.g. `machine_id=1`) already exists. Belongs to the same account
+    as the bypassed auth user (_test_account_id), or every account-scoped
+    query in the app would filter it out.
     """
     db_machine = Machine(
         name="Test Machine",
         location="Test Location",
         manufacturer="Test Manufacturer",
         status="Healthy",
+        account_id=_test_account_id,
     )
     db_session.add(db_machine)
     db_session.commit()

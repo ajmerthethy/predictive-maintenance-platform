@@ -4,9 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.db.database import get_db
 from app.models.alert import Alert
+from app.models.machine import Machine
+from app.models.user import User
 from app.schemas.alert import AlertResponse
+from app.services.tenancy import get_owned_alert_or_404
 
 
 router = APIRouter(
@@ -24,10 +28,15 @@ def get_alerts(
     status: str = None,
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
-    query = db.query(Alert)
+    query = (
+        db.query(Alert)
+        .join(Machine, Alert.machine_id == Machine.id)
+        .filter(Machine.account_id == current_user.account_id)
+    )
 
 
     if status:
@@ -72,24 +81,11 @@ def get_alerts(
 @router.patch("/{alert_id}/acknowledge", response_model=AlertResponse)
 def acknowledge_alert(
     alert_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
-    alert = (
-        db.query(Alert)
-        .filter(
-            Alert.id == alert_id
-        )
-        .first()
-    )
-
-
-    if not alert:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Alert not found"
-        )
+    alert = get_owned_alert_or_404(db, alert_id, current_user.account_id)
 
 
     if alert.status == "RESOLVED":
@@ -118,24 +114,11 @@ def acknowledge_alert(
 @router.patch("/{alert_id}/resolve", response_model=AlertResponse)
 def resolve_alert(
     alert_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
-    alert = (
-        db.query(Alert)
-        .filter(
-            Alert.id == alert_id
-        )
-        .first()
-    )
-
-
-    if not alert:
-
-        raise HTTPException(
-            status_code=404,
-            detail="Alert not found"
-        )
+    alert = get_owned_alert_or_404(db, alert_id, current_user.account_id)
 
 
     if alert.status == "RESOLVED":

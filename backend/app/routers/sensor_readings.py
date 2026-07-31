@@ -6,15 +6,17 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.db.database import get_db
-from app.models.machine import Machine
 from app.models.sensor_reading import SensorReading
+from app.models.user import User
 from app.schemas.sensor_reading import (
     SensorReadingCreate,
     SensorReadingResponse
 )
 
 from app.services.prediction_service import run_prediction
+from app.services.tenancy import get_owned_machine_or_404
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +48,11 @@ NUMERIC_COLUMNS = [
 @router.post("/", response_model=SensorReadingResponse)
 def create_sensor_reading(
     reading: SensorReadingCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+
+    get_owned_machine_or_404(db, reading.machine_id, current_user.account_id)
 
     db_sensor_reading = SensorReading(
         machine_id=reading.machine_id,
@@ -85,8 +90,11 @@ def create_sensor_reading(
 @router.get("/{machine_id}", response_model=list[SensorReadingResponse])
 def get_sensor_readings(
     machine_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+
+    get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
     readings = (
         db.query(SensorReading)
@@ -121,15 +129,10 @@ def bulk_upload_sensor_readings(
     machine_id: int,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
-    machine = db.query(Machine).filter(Machine.id == machine_id).first()
-
-    if not machine:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Machine {machine_id} not found",
-        )
+    get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
     contents = file.file.read()
 

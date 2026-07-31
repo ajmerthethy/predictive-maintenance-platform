@@ -3,17 +3,19 @@ import logging
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.db.database import get_db
 
 from app.models.alert import Alert
-from app.models.machine import Machine
 from app.models.maintenance import MaintenanceTask
 from app.models.prediction import Prediction
+from app.models.user import User
 from app.schemas.prediction import PredictionResponse
 
 from app.services.alert_service import generate_alert
 from app.services.notifications import send_alert_email
 from app.services.risk_service import calculate_risk_level
+from app.services.tenancy import get_owned_machine_or_404
 
 from app.ml.predict import predict_failure
 from app.ml.live_prediction import predict_failure_from_reading
@@ -44,8 +46,11 @@ class PredictionRequest(BaseModel):
 def predict(
     request: PredictionRequest,
     machine_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+
+    machine = get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
     result = predict_failure(
         air_temperature=request.air_temperature,
@@ -111,10 +116,7 @@ def predict(
             created_alert.severity,
         )
 
-        machine = db.query(Machine).filter(Machine.id == machine_id).first()
-
-        if machine:
-            send_alert_email(created_alert, machine)
+        send_alert_email(created_alert, machine)
 
 
 
@@ -192,8 +194,11 @@ def predict(
 @router.get("/machines/{machine_id}")
 def predict_latest(
     machine_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+
+    get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
     return predict_failure_from_reading(
         db,
@@ -207,8 +212,11 @@ def prediction_history(
     machine_id: int,
     limit: int = Query(200, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+
+    get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
     predictions = (
 

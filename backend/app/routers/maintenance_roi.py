@@ -1,11 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
+from app.core.security import get_current_user
 from app.db.database import get_db
 
 from app.models.prediction import Prediction
 from app.models.alert import Alert
 from app.models.maintenance import MaintenanceTask
+from app.models.user import User
 
 from app.services.health_score import (
     calculate_asset_health_score
@@ -20,6 +22,7 @@ from app.services.maintenance_roi import (
 )
 
 from app.services.risk_service import calculate_risk_level
+from app.services.tenancy import get_owned_machine_or_404
 
 
 router = APIRouter(
@@ -31,8 +34,11 @@ router = APIRouter(
 @router.get("/machines/{machine_id}")
 def maintenance_roi(
     machine_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
+
+    get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
     prediction = (
         db.query(Prediction)

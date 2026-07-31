@@ -1,3 +1,4 @@
+from app.models.account import Account
 from app.models.machine import Machine
 from app.models.sensor_reading import SensorReading
 from app.models.prediction import Prediction
@@ -9,6 +10,7 @@ from app.models.user import User
 # Base.metadata (required for Base.metadata.create_all / Alembic autogenerate),
 # even though nothing in this module references the names directly.
 __all__ = [
+    "Account",
     "Machine",
     "SensorReading",
     "Prediction",

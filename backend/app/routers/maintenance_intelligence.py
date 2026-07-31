@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session, joinedload
 
+from app.core.security import get_current_user
 from app.db.database import get_db
+from app.models.machine import Machine
 from app.models.prediction import Prediction
+from app.models.user import User
 from app.services.risk_service import calculate_risk_level
 
 
@@ -14,13 +17,16 @@ router = APIRouter(
 
 @router.get("/summary")
 def maintenance_intelligence(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
 
     critical_assets = {}
 
     predictions = (
         db.query(Prediction)
+        .join(Machine, Prediction.machine_id == Machine.id)
+        .filter(Machine.account_id == current_user.account_id)
         .options(joinedload(Prediction.machine))
         .order_by(
             Prediction.probability.desc()

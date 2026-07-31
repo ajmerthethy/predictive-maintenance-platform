@@ -4,10 +4,12 @@ from app.models.prediction import Prediction
 from app.models.alert import Alert
 from sqlalchemy import distinct
 
+from app.core.security import get_current_user
 from app.db.database import get_db
 
 from app.models.machine import Machine
 from app.models.maintenance import MaintenanceTask
+from app.models.user import User
 
 from app.services.executive_analytics import (
     calculate_maintenance_compliance
@@ -24,22 +26,33 @@ router = APIRouter(
 
 @router.get("/summary")
 def executive_summary(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    assets = db.query(Machine).count()
+    account_id = current_user.account_id
+
+    assets = (
+        db.query(Machine)
+        .filter(Machine.account_id == account_id)
+        .count()
+    )
 
     open_work_orders = (
         db.query(MaintenanceTask)
+        .join(Machine, MaintenanceTask.machine_id == Machine.id)
         .filter(
-            MaintenanceTask.status != "COMPLETED"
+            Machine.account_id == account_id,
+            MaintenanceTask.status != "COMPLETED",
         )
         .count()
     )
 
     completed_work_orders = (
         db.query(MaintenanceTask)
+        .join(Machine, MaintenanceTask.machine_id == Machine.id)
         .filter(
-            MaintenanceTask.status == "COMPLETED"
+            Machine.account_id == account_id,
+            MaintenanceTask.status == "COMPLETED",
         )
         .count()
     )
@@ -48,22 +61,28 @@ def executive_summary(
         db.query(
             distinct(Prediction.machine_id)
         )
+        .join(Machine, Prediction.machine_id == Machine.id)
         .filter(
-            Prediction.prediction == 1
+            Machine.account_id == account_id,
+            Prediction.prediction == 1,
         )
         .count()
     )
 
     active_alerts = (
         db.query(Alert)
+        .join(Machine, Alert.machine_id == Machine.id)
         .filter(
-            Alert.status != "RESOLVED"
+            Machine.account_id == account_id,
+            Alert.status != "RESOLVED",
         )
         .count()
     )
 
     total_work_orders = (
         db.query(MaintenanceTask)
+        .join(Machine, MaintenanceTask.machine_id == Machine.id)
+        .filter(Machine.account_id == account_id)
         .count()
     )
 
@@ -78,7 +97,12 @@ def executive_summary(
     # FLEET HEALTH SCORE
     # -----------------------------
 
-    predictions = db.query(Prediction).all()
+    predictions = (
+        db.query(Prediction)
+        .join(Machine, Prediction.machine_id == Machine.id)
+        .filter(Machine.account_id == account_id)
+        .all()
+    )
 
     scores = []
 
