@@ -6,11 +6,13 @@ from sqlalchemy.orm import Session
 from app.db.database import get_db
 
 from app.models.alert import Alert
+from app.models.machine import Machine
 from app.models.maintenance import MaintenanceTask
 from app.models.prediction import Prediction
 from app.schemas.prediction import PredictionResponse
 
 from app.services.alert_service import generate_alert
+from app.services.notifications import send_alert_email
 from app.services.risk_service import calculate_risk_level
 
 from app.ml.predict import predict_failure
@@ -108,6 +110,11 @@ def predict(
             machine_id,
             created_alert.severity,
         )
+
+        machine = db.query(Machine).filter(Machine.id == machine_id).first()
+
+        if machine:
+            send_alert_email(created_alert, machine)
 
 
 
