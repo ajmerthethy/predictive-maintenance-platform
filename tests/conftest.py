@@ -22,10 +22,12 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 # debugging why rollback appeared to not work. Every test file's import was
 # changed to match this (`from app.main import app`) for the same reason.
 from app.main import app
+from app.core.security import get_current_user
 from app.db.database import get_db
 from app.models.machine import Machine
 from app.models.alert import Alert
 from app.models.maintenance import MaintenanceTask
+from app.models.user import User
 
 
 TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
@@ -63,6 +65,20 @@ def _migrated_test_database():
             f"--- stdout ---\n{result.stdout}\n"
             f"--- stderr ---\n{result.stderr}"
         )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _bypass_auth():
+    """Every router except /health and /auth requires a logged-in user
+    (see #5). These tests exercise business logic, not the login flow
+    itself (that's covered separately) - so route handlers under test
+    should not need a real bearer token, only get_db does.
+    """
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=0, username="test-user", email="test@example.com", role="admin"
+    )
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 @pytest.fixture(autouse=True)

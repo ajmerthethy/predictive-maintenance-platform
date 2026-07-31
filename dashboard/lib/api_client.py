@@ -1,6 +1,7 @@
 import os
 
 import requests
+import streamlit as st
 
 API_URL = os.getenv(
     "API_URL",
@@ -13,9 +14,30 @@ API_URL = os.getenv(
 SHOW_DEBUG_INFO = os.getenv("SHOW_DEBUG_INFO", "0") == "1"
 
 
+def _auth_headers():
+    token = st.session_state.get("auth_token")
+
+    if token:
+        return {"Authorization": f"Bearer {token}"}
+
+    return {}
+
+
+def _get(url, **kwargs):
+    return requests.get(url, headers=_auth_headers(), **kwargs)
+
+
+def _post(url, **kwargs):
+    return requests.post(url, headers=_auth_headers(), **kwargs)
+
+
+def _patch(url, **kwargs):
+    return requests.patch(url, headers=_auth_headers(), **kwargs)
+
+
 def acknowledge_alert(alert_id):
 
-    response = requests.patch(
+    response = _patch(
         f"{API_URL}/alerts/{alert_id}/acknowledge"
     )
 
@@ -24,7 +46,7 @@ def acknowledge_alert(alert_id):
 
 def resolve_alert(alert_id):
 
-    response = requests.patch(
+    response = _patch(
         f"{API_URL}/alerts/{alert_id}/resolve"
     )
 
@@ -32,7 +54,7 @@ def resolve_alert(alert_id):
 
 def get_explanation():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/prediction/explanation"
     )
 
@@ -43,7 +65,7 @@ def get_explanation():
 
 def get_machines():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/machines/"
     )
 
@@ -55,7 +77,7 @@ def get_machines():
 
 def get_prediction(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/prediction/machines/{machine_id}"
     )
 
@@ -66,7 +88,7 @@ def get_prediction(machine_id):
 
 def get_maintenance_recommendation(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/recommendations/machines/{machine_id}"
     )
 
@@ -79,7 +101,7 @@ def get_maintenance_recommendation(machine_id):
 
 def get_sensor_readings(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/sensor_readings/{machine_id}"
     )
 
@@ -90,7 +112,7 @@ def get_sensor_readings(machine_id):
 
 def get_alerts():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/alerts/"
     )
 
@@ -103,7 +125,7 @@ def get_alerts():
 
 def get_risk_ranking():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/analytics/machines/risk"
     )
 
@@ -114,7 +136,7 @@ def get_risk_ranking():
 
 def get_analytics_summary():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/analytics/summary"
     )
 
@@ -126,7 +148,7 @@ def get_analytics_summary():
 
 def get_maintenance_tasks():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/maintenance/"
     )
 
@@ -137,7 +159,7 @@ def get_maintenance_tasks():
 
 def get_health_score(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/health-score/machines/{machine_id}"
     )
 
@@ -148,7 +170,7 @@ def get_health_score(machine_id):
 
 def get_downtime_cost(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/downtime/machines/{machine_id}"
     )
 
@@ -159,7 +181,7 @@ def get_downtime_cost(machine_id):
 
 def get_maintenance_roi(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/roi/machines/{machine_id}"
     )
 
@@ -175,7 +197,7 @@ def create_maintenance_task(
     alert_id=None
 ):
 
-    response = requests.post(
+    response = _post(
         f"{API_URL}/maintenance/",
         params={
             "machine_id": machine_id,
@@ -189,7 +211,7 @@ def create_maintenance_task(
 
 def get_alert_history():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/alerts/?status=RESOLVED"
     )
 
@@ -200,7 +222,7 @@ def get_alert_history():
 
 def get_machine_history(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/history/machines/{machine_id}"
     )
 
@@ -211,7 +233,7 @@ def get_machine_history(machine_id):
 
 def get_machine_health(machine_id):
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/machines/{machine_id}/health"
     )
 
@@ -222,7 +244,7 @@ def get_machine_health(machine_id):
 
 def get_executive_summary():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/executive/summary"
     )
 
@@ -233,7 +255,7 @@ def get_executive_summary():
 
 def get_maintenance_intelligence():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/maintenance-intelligence/summary"
     )
 
@@ -244,7 +266,7 @@ def get_maintenance_intelligence():
 
 def get_fleet_risk():
 
-    response = requests.get(
+    response = _get(
         f"{API_URL}/fleet-risk/summary"
     )
 

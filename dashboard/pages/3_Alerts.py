@@ -9,12 +9,16 @@ from lib.api_client import (
     resolve_alert,
     create_maintenance_task,
 )
+from lib.auth import require_login, logout_button
 
 st.set_page_config(
     page_title="Alerts | Predictive Maintenance",
     page_icon="🏭",
     layout="wide"
 )
+
+require_login()
+logout_button()
 
 machines = get_machines()
 

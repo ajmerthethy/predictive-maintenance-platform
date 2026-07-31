@@ -1,9 +1,10 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from app.core.logging_config import configure_logging
+from app.core.security import get_current_user
 from app.routers import machines
 from app.routers import analytics
 from app.routers import health
@@ -46,23 +47,28 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     )
 
 
-app.include_router(machines.router)
+# /health and /auth are the only unauthenticated routes - everything
+# else requires a valid login (single-customer pilot auth, see #5).
+_auth = [Depends(get_current_user)]
+
 app.include_router(health.router)
-app.include_router(sensor_readings.router)
-app.include_router(analytics.router)
-app.include_router(prediction.router)
-app.include_router(alerts.router)
 app.include_router(auth_router)
-app.include_router(maintenance.router)
-app.include_router(maintenance_summary.router)
-app.include_router(history.router)
-app.include_router(recommendations.router)
-app.include_router(health_score.router)
-app.include_router(downtime.router)
-app.include_router(maintenance_roi.router)
-app.include_router(executive.router)
-app.include_router(fleet_risk.router)
-app.include_router(maintenance_intelligence.router)
+
+app.include_router(machines.router, dependencies=_auth)
+app.include_router(sensor_readings.router, dependencies=_auth)
+app.include_router(analytics.router, dependencies=_auth)
+app.include_router(prediction.router, dependencies=_auth)
+app.include_router(alerts.router, dependencies=_auth)
+app.include_router(maintenance.router, dependencies=_auth)
+app.include_router(maintenance_summary.router, dependencies=_auth)
+app.include_router(history.router, dependencies=_auth)
+app.include_router(recommendations.router, dependencies=_auth)
+app.include_router(health_score.router, dependencies=_auth)
+app.include_router(downtime.router, dependencies=_auth)
+app.include_router(maintenance_roi.router, dependencies=_auth)
+app.include_router(executive.router, dependencies=_auth)
+app.include_router(fleet_risk.router, dependencies=_auth)
+app.include_router(maintenance_intelligence.router, dependencies=_auth)
 
 @app.get("/")
 def root():

@@ -19,6 +19,7 @@ from lib.api_client import (
     get_explanation,
     SHOW_DEBUG_INFO,
 )
+from lib.auth import require_login, logout_button
 from lib.business_rules import generate_recommendation, format_ai_explanation
 from lib.report import generate_maintenance_report
 
@@ -27,6 +28,9 @@ st.set_page_config(
     page_icon="🏭",
     layout="wide"
 )
+
+require_login()
+logout_button()
 
 # -----------------------------
 # MACHINE SELECTOR

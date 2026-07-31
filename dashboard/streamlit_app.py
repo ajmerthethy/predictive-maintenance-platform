@@ -7,6 +7,7 @@ from lib.api_client import (
     get_maintenance_intelligence,
     get_analytics_summary,
 )
+from lib.auth import require_login, logout_button
 from lib.business_rules import calculate_fleet_status
 
 st.set_page_config(
@@ -14,6 +15,9 @@ st.set_page_config(
     page_icon="🏭",
     layout="wide"
 )
+
+require_login()
+logout_button()
 
 st.title("🏭 Predictive Maintenance Dashboard")
 

@@ -2,12 +2,16 @@ import streamlit as st
 import pandas as pd
 
 from lib.api_client import get_executive_summary, get_fleet_risk
+from lib.auth import require_login, logout_button
 
 st.set_page_config(
     page_title="Executive Dashboard | Predictive Maintenance",
     page_icon="🏭",
     layout="wide"
 )
+
+require_login()
+logout_button()
 
 st.header(
     "📊 Executive Dashboard"

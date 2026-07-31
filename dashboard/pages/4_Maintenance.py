@@ -1,14 +1,17 @@
 import streamlit as st
 import pandas as pd
-import requests
 
-from lib.api_client import API_URL, get_machines, get_maintenance_tasks
+from lib.api_client import API_URL, get_machines, get_maintenance_tasks, _patch
+from lib.auth import require_login, logout_button
 
 st.set_page_config(
     page_title="Maintenance | Predictive Maintenance",
     page_icon="🏭",
     layout="wide"
 )
+
+require_login()
+logout_button()
 
 machines = get_machines()
 
@@ -219,7 +222,7 @@ if tasks:
                         key=f"start_{task['id']}"
                     ):
 
-                        response = requests.patch(
+                        response = _patch(
                             f"{API_URL}/maintenance/{task['id']}/start",
                             params={
                                 "technician": "Maintenance Team"
@@ -249,7 +252,7 @@ if tasks:
                         key=f"complete_{task['id']}"
                     ):
 
-                        response = requests.patch(
+                        response = _patch(
                             f"{API_URL}/maintenance/{task['id']}/complete"
                         )
 
