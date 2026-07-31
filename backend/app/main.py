@@ -1,7 +1,9 @@
 import logging
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session
 
 from app.core.config import (
     JWT_SECRET_KEY,
@@ -10,6 +12,7 @@ from app.core.config import (
 )
 from app.core.logging_config import configure_logging
 from app.core.security import get_current_user
+from app.db.database import get_db
 from app.routers import machines
 from app.routers import analytics
 from app.routers import health
@@ -95,6 +98,36 @@ def root():
 
 @app.get("/health")
 def health_check():
+    """Pure liveness check - always 200 if the process can respond at
+    all, with zero dependency on the database. This is what local
+    docker-compose's own healthcheck targets; keep it that way, since a
+    container-restart policy tied to DB reachability can cause exactly
+    the kind of restart loop this endpoint is meant to avoid. Point an
+    external uptime monitor at /health/db below instead, which actually
+    catches "the process is up but can't reach the database."
+    """
     return {
         "status": "healthy"
+    }
+
+
+@app.get("/health/db")
+def health_check_db(db: Session = Depends(get_db)):
+    """Readiness check: confirms the database is actually reachable, not
+    just that the process is running. Unauthenticated, like /health -
+    an external uptime monitor won't have a bearer token.
+    """
+    try:
+        db.execute(text("SELECT 1"))
+
+    except Exception:
+        logger.exception("Database health check failed")
+        raise HTTPException(
+            status_code=503,
+            detail="Database unavailable",
+        )
+
+    return {
+        "status": "healthy",
+        "database": "reachable",
     }

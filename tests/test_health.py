@@ -1,7 +1,10 @@
+import logging
+
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core.security import get_current_user
+from app.db.database import get_db
 
 
 client = TestClient(app)
@@ -14,6 +17,40 @@ def test_health_check():
     assert response.json() == {
         "status": "healthy"
     }
+
+
+def test_health_check_requires_no_auth():
+    """Pure liveness - an external monitor won't have a bearer token."""
+    response = client.get("/health")
+    assert response.status_code == 200
+
+
+def test_health_db_check_returns_200_when_database_reachable():
+    response = client.get("/health/db")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "healthy", "database": "reachable"}
+
+
+def test_health_db_check_returns_503_and_logs_when_database_unreachable(caplog):
+    class _BrokenSession:
+        def execute(self, *args, **kwargs):
+            raise RuntimeError("simulated database outage for this test")
+
+        def close(self):
+            pass
+
+    app.dependency_overrides[get_db] = lambda: _BrokenSession()
+
+    with caplog.at_level(logging.ERROR):
+        response = client.get("/health/db")
+
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Database unavailable"}
+    assert any(
+        "Database health check failed" in record.getMessage()
+        for record in caplog.records
+    )
 
 
 def _reading_payload(machine_id):
