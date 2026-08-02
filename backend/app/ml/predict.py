@@ -1,27 +1,10 @@
 import logging
 
-import joblib
 import pandas as pd
-import os
-import shap
+
+from app.ml.model_loader import model, explainer
 
 logger = logging.getLogger(__name__)
-
-
-BASE_DIR = os.path.dirname(
-    os.path.abspath(__file__)
-)
-
-MODEL_PATH = os.path.join(
-    BASE_DIR,
-    "saved_models",
-    "failure_model.pkl"
-)
-
-
-model = joblib.load(MODEL_PATH)
-
-explainer = shap.TreeExplainer(model)
 
 
 def predict_failure(

@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
@@ -14,11 +14,12 @@ from app.schemas.prediction import PredictionResponse
 
 from app.services.alert_service import generate_alert
 from app.services.notifications import send_alert_email
-from app.services.risk_service import calculate_risk_level
+from app.services.risk_service import calculate_risk_level, get_latest_prediction
+from app.services.sensor_validation import out_of_range_fields, violation_messages
 from app.services.tenancy import get_owned_machine_or_404
 
+from app.ml import model_loader
 from app.ml.predict import predict_failure
-from app.ml.live_prediction import predict_failure_from_reading
 from app.ml.explain import get_feature_importance
 
 from pydantic import BaseModel
@@ -52,6 +53,20 @@ def predict(
 
     machine = get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
+    violations = out_of_range_fields(
+        air_temperature=request.air_temperature,
+        process_temperature=request.process_temperature,
+        rotational_speed=request.rotational_speed,
+        torque=request.torque,
+        tool_wear=request.tool_wear,
+    )
+
+    if violations:
+        raise HTTPException(
+            status_code=422,
+            detail=violation_messages(violations),
+        )
+
     result = predict_failure(
         air_temperature=request.air_temperature,
         process_temperature=request.process_temperature,
@@ -66,13 +81,28 @@ def predict(
     prediction_record = Prediction(
         machine_id=machine_id,
         prediction=result["prediction"],
-        probability=result["probability"]
+        probability=result["probability"],
+        top_factors=result["top_factors"],
+        input_features={
+            "air_temperature": request.air_temperature,
+            "process_temperature": request.process_temperature,
+            "rotational_speed": request.rotational_speed,
+            "torque": request.torque,
+            "tool_wear": request.tool_wear,
+        },
+        model_version=model_loader.MODEL_VERSION,
     )
 
 
     db.add(prediction_record)
     db.commit()
     db.refresh(prediction_record)
+
+    # Computed once, up front, via the single canonical classifier (see
+    # app.services.risk_service.calculate_risk_level) - used both in the
+    # response below and in the work-order logic further down, so nothing
+    # else in this endpoint re-derives its own risk tier from probability.
+    risk_level = calculate_risk_level(prediction_record.probability)
 
     logger.info(
         "Prediction created id=%s machine_id=%s probability=%s",
@@ -123,9 +153,6 @@ def predict(
         # -----------------------------
         # AUTOMATIC WORK ORDER CREATION
         # -----------------------------
-
-        probability = prediction_record.probability
-        risk_level = calculate_risk_level(probability)
 
         if risk_level == "CRITICAL":
 
@@ -180,7 +207,11 @@ def predict(
 
         "probability": result["probability"],
 
+        "risk_level": risk_level,
+
         "top_factors": result["top_factors"],
+
+        "model_version": prediction_record.model_version,
 
         "alert_created": bool(created_alert),
 
@@ -197,13 +228,33 @@ def predict_latest(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Returns the most recently stored prediction for this machine -
+    performs no inference and creates no new Prediction row (a GET must be
+    read-only). Predictions are created by the write paths that actually
+    produce new sensor data: POST /prediction/, POST /sensor_readings/, and
+    POST /sensor_readings/bulk.
+    """
 
     get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
-    return predict_failure_from_reading(
-        db,
-        machine_id
-    )
+    prediction = get_latest_prediction(db, machine_id)
+
+    if prediction is None:
+        return {
+            "error": "No prediction available yet for this machine."
+        }
+
+    return {
+        "machine_id": machine_id,
+        "sensor_reading_id": prediction.sensor_reading_id,
+        "prediction_id": prediction.id,
+        "prediction": prediction.prediction,
+        "probability": prediction.probability,
+        "risk_level": calculate_risk_level(prediction.probability),
+        "top_factors": prediction.top_factors,
+        "input_features": prediction.input_features,
+        "model_version": prediction.model_version,
+    }
 
 
 
@@ -249,6 +300,13 @@ def explanation():
     return {
 
         "feature_importance":
-            get_feature_importance()
+            get_feature_importance(),
+
+        "model_info": {
+            "version": model_loader.MODEL_VERSION,
+            "algorithm": model_loader.metadata.get("algorithm"),
+            "trained_at": model_loader.metadata.get("trained_at"),
+            "metrics": model_loader.metadata.get("metrics"),
+        },
 
     }

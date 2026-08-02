@@ -25,3 +25,18 @@ def test_prediction_endpoint(machine):
     assert "prediction" in data
     assert "probability" in data
     assert "top_factors" in data
+    assert "risk_level" in data
+    assert "model_version" in data
+
+
+def test_explanation_endpoint_includes_feature_importance_and_model_info():
+    response = client.get("/prediction/explanation")
+
+    assert response.status_code == 200
+    data = response.json()
+
+    assert len(data["feature_importance"]) == 5
+
+    model_info = data["model_info"]
+    assert model_info["version"]
+    assert model_info["algorithm"] == "RandomForestClassifier"

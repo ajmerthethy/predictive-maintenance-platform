@@ -1,10 +1,16 @@
-def generate_recommendation(insights, probability_percent):
+def generate_recommendation(insights, risk_level):
+    """`risk_level` is the CRITICAL/WARNING/LOW tier the backend already
+    computed (single source of truth: app.services.risk_service.
+    calculate_risk_level) - this only maps it to display labels, it does
+    not re-derive thresholds from a raw probability (see
+    calculate_fleet_status below, which established this pattern first).
+    """
 
-    if probability_percent >= 75:
+    if risk_level == "CRITICAL":
         priority = "🔴 HIGH"
         timeframe = "Immediate inspection required"
 
-    elif probability_percent >= 50:
+    elif risk_level == "WARNING":
         priority = "🟡 MEDIUM"
         timeframe = "Inspect within 7 days"
 

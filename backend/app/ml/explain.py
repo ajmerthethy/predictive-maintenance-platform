@@ -1,11 +1,5 @@
-from pathlib import Path
-import joblib
+from app.ml.model_loader import feature_importance
 
-BASE_DIR = Path(__file__).resolve().parent
-
-IMPORTANCE_PATH = BASE_DIR / "saved_models" / "feature_importance.pkl"
-
-feature_importance = joblib.load(IMPORTANCE_PATH)
 
 def get_feature_importance():
 

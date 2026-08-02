@@ -5,6 +5,14 @@ def calculate_health_status(
         torque: float,
         tool_wear: float
 ):
+    """A rule-based check directly on raw sensor thresholds - deliberately
+    independent of the ML model's probability output and its canonical
+    CRITICAL/WARNING/LOW classification (see
+    app.services.risk_service.calculate_risk_level). This is a second,
+    complementary signal (e.g. "Detected Issues" in the dashboard), not a
+    duplicate of that classification, so its own Critical/Warning/Healthy
+    labels are not meant to match the canonical tiers one-for-one.
+    """
 
     risk_score = 0
     issues = []

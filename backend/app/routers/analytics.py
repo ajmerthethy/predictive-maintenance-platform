@@ -11,6 +11,7 @@ from app.models.user import User
 from app.services.risk_service import (
     get_latest_prediction_by_machine,
     calculate_risk_level,
+    CRITICAL_THRESHOLD,
 )
 
 router = APIRouter(
@@ -46,7 +47,7 @@ def analytics_summary(
 
     high_risk_predictions = (
         account_predictions
-        .filter(Prediction.probability >= 0.75)
+        .filter(Prediction.probability >= CRITICAL_THRESHOLD)
         .count()
     )
 

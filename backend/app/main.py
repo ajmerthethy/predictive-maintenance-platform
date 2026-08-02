@@ -30,6 +30,7 @@ from app.routers import maintenance_roi
 from app.routers import executive
 from app.routers import fleet_risk
 from app.routers import maintenance_intelligence
+from app.routers import model_performance
 
 configure_logging()
 logger = logging.getLogger(__name__)
@@ -88,6 +89,7 @@ app.include_router(maintenance_roi.router, dependencies=_auth)
 app.include_router(executive.router, dependencies=_auth)
 app.include_router(fleet_risk.router, dependencies=_auth)
 app.include_router(maintenance_intelligence.router, dependencies=_auth)
+app.include_router(model_performance.router, dependencies=_auth)
 
 @app.get("/")
 def root():

@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "trained_at": null,
+  "algorithm": "RandomForestClassifier",
+  "framework": "scikit-learn",
+  "sklearn_version": "1.9.0",
+  "hyperparameters": {
+    "bootstrap": true,
+    "ccp_alpha": 0.0,
+    "class_weight": "balanced",
+    "criterion": "gini",
+    "max_depth": null,
+    "max_features": "sqrt",
+    "max_leaf_nodes": null,
+    "max_samples": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 1,
+    "min_samples_split": 2,
+    "min_weight_fraction_leaf": 0.0,
+    "monotonic_cst": null,
+    "n_estimators": 200,
+    "n_jobs": null,
+    "oob_score": false,
+    "random_state": 42,
+    "verbose": 0,
+    "warm_start": false
+  },
+  "feature_columns": [
+    "Air temperature [K]",
+    "Process temperature [K]",
+    "Rotational speed [rpm]",
+    "Torque [Nm]",
+    "Tool wear [min]"
+  ],
+  "target": "Machine failure",
+  "metrics": {
+    "accuracy": null,
+    "precision": null,
+    "recall": null,
+    "f1_score": null,
+    "confusion_matrix": null,
+    "n_train": null,
+    "n_test": null
+  },
+  "notes": "Pre-existing artifact migrated into the versioning scheme introduced by the ML/MLOps audit's Near-Term recommendations. Hyperparameters and sklearn_version were recovered from the loaded model itself (model.get_params()) and the installed sklearn version at migration time; trained_at and the metrics block were never recorded when this model was originally trained and are honestly left null rather than fabricated. feature_importance.pkl was regenerated from this model's own model.feature_importances_ during this migration - the previous copy of that file was stale, listing 'vibration'/'temperature'/'pressure' (features from an earlier, pre-AI4I iteration of this project) rather than this model's actual 5 features, and was silently wrong in production. Every model trained from here forward (see train_ai4i.py) auto-generates this file so it can never drift out of sync again."
+}

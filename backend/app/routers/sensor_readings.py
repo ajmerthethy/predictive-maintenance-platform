@@ -16,6 +16,7 @@ from app.schemas.sensor_reading import (
 )
 
 from app.services.prediction_service import run_prediction
+from app.services.sensor_validation import SENSOR_RANGES, out_of_range_fields, violation_messages
 from app.services.tenancy import get_owned_machine_or_404
 
 logger = logging.getLogger(__name__)
@@ -54,6 +55,20 @@ def create_sensor_reading(
 
     get_owned_machine_or_404(db, reading.machine_id, current_user.account_id)
 
+    violations = out_of_range_fields(
+        air_temperature=reading.air_temperature,
+        process_temperature=reading.process_temperature,
+        rotational_speed=reading.rotational_speed,
+        torque=reading.torque,
+        tool_wear=reading.tool_wear,
+    )
+
+    if violations:
+        raise HTTPException(
+            status_code=422,
+            detail=violation_messages(violations),
+        )
+
     db_sensor_reading = SensorReading(
         machine_id=reading.machine_id,
         timestamp=reading.timestamp,
@@ -61,7 +76,8 @@ def create_sensor_reading(
         process_temperature=reading.process_temperature,
         rotational_speed=reading.rotational_speed,
         torque=reading.torque,
-        tool_wear=reading.tool_wear
+        tool_wear=reading.tool_wear,
+        failure=reading.failure
     )
 
     db.add(db_sensor_reading)
@@ -176,6 +192,23 @@ def bulk_upload_sensor_readings(
         for column in NUMERIC_COLUMNS
     }
 
+    # Optional ground-truth column, not in BULK_UPLOAD_COLUMNS - every CSV
+    # without it (i.e. every one before this feature existed) keeps working
+    # unchanged. Parsed leniently: an absent column, a blank cell, or a
+    # value that isn't recognizably truthy all mean "unknown/false" rather
+    # than failing the row, since this is a nice-to-have annotation, not a
+    # required sensor value (see app.services.model_performance).
+    if "failure" in df.columns:
+        parsed_failure_column = (
+            df["failure"]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            .isin(["1", "true", "yes", "y"])
+        )
+    else:
+        parsed_failure_column = pd.Series(False, index=df.index)
+
     row_errors = []
 
     for position in range(len(df)):
@@ -201,10 +234,21 @@ def bulk_upload_sensor_readings(
 
         for column in NUMERIC_COLUMNS:
 
-            if pd.isna(parsed_numeric_columns[column].iloc[position]):
+            value = parsed_numeric_columns[column].iloc[position]
+
+            if pd.isna(value):
                 row_errors.append(
                     f"row {row_number}: invalid value for "
                     f"'{column}': '{df[column].iloc[position]}'"
+                )
+                continue
+
+            low, high, unit = SENSOR_RANGES[column]
+
+            if value < low or value > high:
+                row_errors.append(
+                    f"row {row_number}: {column} value {value} is outside "
+                    f"the realistic range [{low}, {high}] {unit}"
                 )
 
     if row_errors:
@@ -228,6 +272,7 @@ def bulk_upload_sensor_readings(
             rotational_speed=float(parsed_numeric_columns["rotational_speed"].iloc[position]),
             torque=float(parsed_numeric_columns["torque"].iloc[position]),
             tool_wear=float(parsed_numeric_columns["tool_wear"].iloc[position]),
+            failure=bool(parsed_failure_column.iloc[position]),
         )
         for position in range(len(df))
     ]
@@ -241,7 +286,19 @@ def bulk_upload_sensor_readings(
         len(readings),
     )
 
+    # A single prediction against the latest (most recent timestamp)
+    # uploaded reading - not one per row, which would mean thousands of ML
+    # calls on a historical backfill.
+    prediction = run_prediction(db, machine_id)
+
+    logger.info(
+        "Automatic prediction after bulk upload for machine_id=%s: %s",
+        machine_id,
+        prediction,
+    )
+
     return {
         "machine_id": machine_id,
         "rows_inserted": len(readings),
+        "prediction": prediction,
     }

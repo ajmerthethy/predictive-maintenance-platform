@@ -1,5 +1,6 @@
 from app.services.downtime_cost import calculate_downtime_cost
 from app.services.health_score import calculate_asset_health_score
+from app.services.maintenance_recommendation import generate_maintenance_recommendation
 from app.services.maintenance_roi import calculate_maintenance_roi
 
 
@@ -218,3 +219,71 @@ def test_maintenance_roi_uses_configured_defaults_when_not_provided():
     assert result["maintenance_cost"] == DEFAULT_MAINTENANCE_COST
     assert result["potential_downtime_loss"] == expected_loss
     assert result["estimated_savings"] == expected_savings
+
+
+# -----------------------------
+# MAINTENANCE RECOMMENDATION
+# (derives its CRITICAL/WARNING tiers from the single canonical classifier,
+# app.services.risk_service.calculate_risk_level - see ML/MLOps audit,
+# Immediate #3)
+# -----------------------------
+
+def test_maintenance_recommendation_75_to_80_percent_is_now_critical():
+    """The actual bug being fixed: this function previously put CRITICAL at
+    80%, while risk_service (and every other panel) calls 75-79.9%
+    CRITICAL already. A machine must not be CRITICAL in one part of the
+    app and only HIGH in another.
+    """
+    result = generate_maintenance_recommendation(
+        probability=0.76, health_status="CRITICAL"
+    )
+    assert result["priority"] == "CRITICAL"
+    assert result["recommended_window"] == "Immediate inspection required"
+
+
+def test_maintenance_recommendation_critical_at_and_above_80_percent_unchanged():
+    result = generate_maintenance_recommendation(
+        probability=0.85, health_status="CRITICAL"
+    )
+    assert result["priority"] == "CRITICAL"
+    assert result["recommended_action"] == (
+        "Inspect machine components before next operating cycle."
+    )
+
+
+def test_maintenance_recommendation_high_tier_50_to_75_unchanged():
+    result = generate_maintenance_recommendation(
+        probability=0.60, health_status="WARNING"
+    )
+    assert result["priority"] == "HIGH"
+    assert result["recommended_window"] == "Schedule maintenance within 7 days"
+    assert result["recommended_action"] == (
+        "Perform preventive inspection and check abnormal operating conditions."
+    )
+
+
+def test_maintenance_recommendation_medium_tier_20_to_50_unchanged():
+    result = generate_maintenance_recommendation(
+        probability=0.30, health_status="LOW"
+    )
+    assert result["priority"] == "MEDIUM"
+    assert result["recommended_window"] == "Monitor and inspect within 30 days"
+    assert result["recommended_action"] == (
+        "Continue monitoring sensor trends and prepare preventive maintenance."
+    )
+
+
+def test_maintenance_recommendation_low_tier_below_20_unchanged():
+    result = generate_maintenance_recommendation(
+        probability=0.05, health_status="LOW"
+    )
+    assert result["priority"] == "LOW"
+    assert result["recommended_window"] == "No immediate action required"
+    assert result["recommended_action"] == "Continue normal operation."
+
+
+def test_maintenance_recommendation_boundary_exactly_at_75_percent():
+    result = generate_maintenance_recommendation(
+        probability=0.75, health_status="CRITICAL"
+    )
+    assert result["priority"] == "CRITICAL"

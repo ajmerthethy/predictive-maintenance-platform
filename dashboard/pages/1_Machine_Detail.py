@@ -64,9 +64,8 @@ selected_machine = st.selectbox(
 
 machine_id = machine_names[selected_machine]
 machine_name = machine_lookup.get(
-    machine_id,
-    "Unknown Machine"
-)
+    machine_id, {}
+).get("name", "Unknown Machine")
 selected_machine_data = machine_lookup[machine_id]
 
 
@@ -285,6 +284,7 @@ st.header(
 )
 
 probability_percent = 0
+risk_level = "LOW"
 
 if prediction:
 
@@ -302,19 +302,16 @@ if prediction:
     probability_percent = probability * 100
     health_score_from_prob = 100 - probability_percent
 
-    # Aligned with the backend's canonical risk_level thresholds
-    # (app.services.risk_service.calculate_risk_level: >=75 / >=50).
-    if probability_percent >= 75:
-        risk_level = "CRITICAL"
-        status = "🔴 High Risk"
+    # risk_level comes straight from the backend's canonical classifier
+    # (app.services.risk_service.calculate_risk_level) - never re-derived
+    # from probability_percent here, so this page can't disagree with any
+    # other panel about whether a machine is CRITICAL/WARNING/LOW.
+    risk_level = prediction.get("risk_level", "LOW")
 
-    elif probability_percent >= 50:
-        risk_level = "WARNING"
-        status = "🟡 Medium Risk"
-
-    else:
-        risk_level = "LOW"
-        status = "🟢 Low Risk"
+    status = {
+        "CRITICAL": "🔴 High Risk",
+        "WARNING": "🟡 Medium Risk",
+    }.get(risk_level, "🟢 Low Risk")
 
     col1, col2, col3, col4 = st.columns(4)
 
@@ -804,7 +801,7 @@ if not df.empty:
 
     insights_recommendation = generate_recommendation(
         insights,
-        probability_percent
+        risk_level
     )
 
     st.subheader(

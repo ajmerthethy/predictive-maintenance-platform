@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
@@ -8,10 +8,7 @@ from app.services.maintenance_recommendation import (
     generate_maintenance_recommendation
 )
 
-from app.routers.prediction import (
-    predict_failure_from_reading
-)
-from app.services.risk_service import calculate_risk_level
+from app.services.risk_service import calculate_risk_level, get_latest_prediction
 from app.services.tenancy import get_owned_machine_or_404
 
 
@@ -27,27 +24,23 @@ def get_recommendation(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    """Reads the most recently stored prediction - performs no inference
+    and creates no new Prediction row (a GET must be read-only).
+    """
 
     get_owned_machine_or_404(db, machine_id, current_user.account_id)
 
-    prediction = predict_failure_from_reading(
-        db,
-        machine_id
-    )
+    prediction = get_latest_prediction(db, machine_id)
 
+    if prediction is None:
+        raise HTTPException(
+            status_code=404,
+            detail="No prediction available for this machine yet.",
+        )
 
-    health_status = "Unknown"
-
-
-    if prediction:
-
-        probability = prediction["probability"]
-
-        health_status = calculate_risk_level(probability)
-
-
+    risk_level = calculate_risk_level(prediction.probability)
 
     return generate_maintenance_recommendation(
-        prediction["probability"],
-        health_status
+        prediction.probability,
+        risk_level
     )
