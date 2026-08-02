@@ -134,8 +134,15 @@ assets = pd.DataFrame(
     risk_data["assets"]
 )
 
+assets = assets.rename(columns={
+    "machine_id": "Machine ID",
+    "machine_name": "Machine Name",
+    "risk": "Risk (%)",
+    "status": "Status",
+})
 
 st.dataframe(
     assets,
-    use_container_width=True
+    use_container_width=True,
+    hide_index=True,
 )

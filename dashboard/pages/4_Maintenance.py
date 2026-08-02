@@ -105,10 +105,8 @@ if tasks:
 
     for _, task in tasks_df.iterrows():
 
-        machine_name = machine_lookup.get(
-            task["machine_id"],
-            f"Machine {task['machine_id']}"
-        )
+        machine = machine_lookup.get(task["machine_id"])
+        machine_name = machine["name"] if machine else f"Machine {task['machine_id']}"
 
 
         with st.container():

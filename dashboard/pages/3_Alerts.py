@@ -41,10 +41,8 @@ if alerts:
 
     for alert in alerts:
 
-        machine_name = machine_lookup.get(
-            alert["machine_id"],
-            f"Machine {alert['machine_id']}"
-        )
+        machine = machine_lookup.get(alert["machine_id"])
+        machine_name = machine["name"] if machine else f"Machine {alert['machine_id']}"
 
         severity = alert["severity"]
         status = alert["status"]
